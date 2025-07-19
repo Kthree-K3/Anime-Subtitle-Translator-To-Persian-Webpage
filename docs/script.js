@@ -257,22 +257,23 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); apiKeyInput.value = ''; loadModels(); loadPrompts(); checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
     
     function checkFormValidity() { translateBtn.disabled = !(uploadedFile && apiKeyInput.value.trim() !== ''); }
-    async function handleFileSelect(file) {
+       async function handleFileSelect(file) {
         uploadedFile = null;
-        fileNameDisplay.textContent = '';
+        fileNameDisplay.innerHTML = ''; // Changed from textContent
         errorDisplay.classList.add('hidden');
         checkFormValidity();
 
         if (!file) return;
 
         const fileName = file.name.toLowerCase();
-        const supportedVideoFormats = ['.mkv', '.mp4'];
+        const supportedVideoFormats = ['.mkv', '.mp4', '.avi', '.mov'];
         const supportedSubtitleFormats = ['.srt', '.ass'];
 
         if (supportedSubtitleFormats.some(ext => fileName.endsWith(ext))) {
             uploadedFile = file;
             const filenameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
-            fileNameDisplay.textContent = `فایل انتخاب شده: ${filenameWithoutExt}${fileName.substring(file.name.lastIndexOf('.'))}`;
+            const fullFilename = `${filenameWithoutExt}${fileName.substring(file.name.lastIndexOf('.'))}`;
+            fileNameDisplay.innerHTML = `فایل انتخاب شده:<br><span class="filename-text">${fullFilename}</span>`; // Use innerHTML
             checkFormValidity();
         } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
             fileNameDisplay.textContent = `در حال تحلیل فایل ویدیویی: ${file.name}...`;
@@ -286,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const subtitleStreams = parsedResult.streams.filter(s => s.codec_type === 'subtitle');
                 if (subtitleStreams.length === 0) {
                     alert('هیچ ترک زیرنویسی در این فایل ویدیویی یافت نشد.');
-                    fileNameDisplay.textContent = '';
+                    fileNameDisplay.innerHTML = '';
                     return;
                 }
 
@@ -300,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const promptMessage = `چندین ترک زیرنویس در فایل یافت شد. لطفاً شماره ترک مورد نظر را وارد کنید:\n\n${streamOptions}`;
                 while (selectedIndex < 0 || selectedIndex >= subtitleStreams.length) {
                     const input = prompt(promptMessage);
-                    if (input === null) { fileNameDisplay.textContent = ''; return; }
+                    if (input === null) { fileNameDisplay.innerHTML = ''; return; }
                     selectedIndex = parseInt(input, 10) - 1;
                     if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= subtitleStreams.length) {
                         alert('انتخاب نامعتبر. لطفاً یک شماره صحیح از لیست وارد کنید.');
@@ -315,19 +316,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     type: selectedStream.codec_name,
                     name: `${file.name.substring(0, file.name.lastIndexOf('.'))}.track${selectedStream.index}.${selectedStream.codec_name}`
                 };
-                fileNameDisplay.textContent = `ترک انتخاب شده: [${selectedStream.tags?.language || 'unk'}] (فرمت: ${selectedStream.codec_name})`;
+                const trackInfo = `[${selectedStream.tags?.language || 'unk'}] (فرمت: ${selectedStream.codec_name})`;
+                fileNameDisplay.innerHTML = `ترک انتخاب شده:<br><span class="filename-text">${trackInfo}</span>`; // Use innerHTML
                 checkFormValidity();
 
             } catch (error) {
                 console.error("Error processing video file:", error);
                 errorMessage.textContent = `خطا در تحلیل فایل ویدیویی: ${error.message}`;
                 errorDisplay.classList.remove('hidden');
-                fileNameDisplay.textContent = '';
+                fileNameDisplay.innerHTML = '';
             }
         } else {
             alert('فرمت فایل پشتیبانی نمی‌شود. لطفاً یک فایل با فرمت .srt, .ass, .mkv, .mp4 انتخاب کنید.');
         }
-    }
+       }
     async function handleFetchError(response) { const errorText = await response.text(); try { return JSON.parse(errorText).error?.message || errorText; } catch (e) { return errorText; } }
 
     function runFFprobeCommand(file, args) {
