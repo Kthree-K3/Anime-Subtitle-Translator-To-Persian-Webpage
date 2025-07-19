@@ -453,6 +453,7 @@ footer {
     font-size: 0.95rem;
     line-height: 1.8;
     color: var(--subtle-text-color);
+    font-family: var(--font-family);
 }
 
 #download-btn {
