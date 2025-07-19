@@ -1,5 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
 
+    // --- Dynamic Tooltip Update for Mobile ---
+    if (isMobile()) {
+        const uploadTooltip = document.getElementById('upload-tooltip-text');
+        if (uploadTooltip) {
+            uploadTooltip.innerHTML = `
+                می‌توانید فایل زیرنویس (srt, ass) یا فایل ویدیویی (mkv, mp4) را انتخاب کنید.
+                <br><b>نکته مهم:</b> پردازش ویدیو در موبایل ممکن است کند باشد. <b>برای بهترین نتیجه، استفاده از مرورگر Firefox توصیه می‌شود.</b>
+                <br>فایل ویدیویی شما هرگز آپلود نمی‌شود و پردازش کاملاً در مرورگر شما انجام می‌گردد.
+            `;
+        }
+    }
+
+
     // --- 1. انتخاب عناصر HTML ---
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
@@ -27,7 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // New elements
     const stopTranslationBtn = document.getElementById('stop-translation-btn');
     const translationStatusMessage = document.getElementById('translation-status-message');
-
+    // --- Helper functions for device detection ---
+    const isMobile = () => /Mobi|Android|iPhone/i.test(navigator.userAgent);
+    const isChromeOnMobile = () => isMobile() && /Chrome/i.test(navigator.userAgent) && !/Firefox|Edg/i.test(navigator.userAgent);
 
     // --- 2. ثابت‌ها و متغیرهای اصلی ---
     // IMPORTANT: DO NOT MODIFY THIS PROMPT. IT IS HIGHLY OPTIMIZED.
@@ -257,9 +272,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); apiKeyInput.value = ''; loadModels(); loadPrompts(); checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
     
     function checkFormValidity() { translateBtn.disabled = !(uploadedFile && apiKeyInput.value.trim() !== ''); }
-       async function handleFileSelect(file) {
+          async function handleFileSelect(file) {
         uploadedFile = null;
-        fileNameDisplay.innerHTML = ''; // Changed from textContent
+        fileNameDisplay.innerHTML = '';
         errorDisplay.classList.add('hidden');
         checkFormValidity();
 
@@ -273,9 +288,15 @@ document.addEventListener('DOMContentLoaded', () => {
             uploadedFile = file;
             const filenameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
             const fullFilename = `${filenameWithoutExt}${fileName.substring(file.name.lastIndexOf('.'))}`;
-            fileNameDisplay.innerHTML = `فایل انتخاب شده:<br><span class="filename-text">${fullFilename}</span>`; // Use innerHTML
+            fileNameDisplay.innerHTML = `فایل انتخاب شده:<br><span class="filename-text">${fullFilename}</span>`;
             checkFormValidity();
         } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
+            
+            // --- NEW: Mobile Chrome Warning ---
+            if (isChromeOnMobile()) {
+                alert("توجه: شما در حال استفاده از مرورگر کروم روی موبایل هستید.\n\nپردازش فایل‌های ویدیویی در این مرورگر ممکن است بسیار کند باشد یا متوقف شود. برای بهترین نتیجه، استفاده از مرورگر Firefox توصیه می‌شود.\n\n(این فقط یک هشدار است و فرآیند ادامه خواهد یافت)");
+            }
+
             fileNameDisplay.innerHTML = `در حال تحلیل فایل ویدیویی:<br><span class="filename-text">${file.name}</span>`;
             translateBtn.disabled = true;
 
@@ -317,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     name: `${file.name.substring(0, file.name.lastIndexOf('.'))}.track${selectedStream.index}.${selectedStream.codec_name}`
                 };
                 const trackInfo = `[${selectedStream.tags?.language || 'unk'}] (فرمت: ${selectedStream.codec_name})`;
-                fileNameDisplay.innerHTML = `ترک انتخاب شده:<br><span class="filename-text">${trackInfo}</span>`; // Use innerHTML
+                fileNameDisplay.innerHTML = `ترک انتخاب شده:<br><span class="filename-text">${trackInfo}</span>`;
                 checkFormValidity();
 
             } catch (error) {
@@ -329,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             alert('فرمت فایل پشتیبانی نمی‌شود. لطفاً یک فایل با فرمت .srt, .ass, .mkv, .mp4 انتخاب کنید.');
         }
-       }
+          }
     async function handleFetchError(response) { const errorText = await response.text(); try { return JSON.parse(errorText).error?.message || errorText; } catch (e) { return errorText; } }
 
     function runFFprobeCommand(file, args) {
