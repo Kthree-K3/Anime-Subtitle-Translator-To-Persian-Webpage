@@ -458,3 +458,69 @@ footer {
 #download-btn {
     margin-top: 1.5rem;
 }
+
+/* === استایل‌های جدید برای فوتر و دکمه گیت‌هاب === */
+footer {
+    text-align: center;
+    margin-top: 4rem;
+    color: var(--subtle-text-color);
+}
+
+footer p {
+    margin: 0.5em 0;
+}
+
+footer b {
+    color: var(--text-color);
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    background-color: transparent;
+    text-decoration: none;
+    font-size: 1em;
+    font-family: var(--font-family);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #ffffff;
+}
+
+.btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+/* استایل برای خطوط افقی در فوتر */
+hr.footer-hr {
+    border: 0;
+    height: 1px;
+    /* گرادینت با استفاده از رنگ اصلی پروژه #ff477e -> rgb(255, 71, 126) */
+    background-image: linear-gradient(to left, rgba(255, 71, 126, 0), rgba(255, 71, 126, 0.75), rgba(255, 71, 126, 0));
+    margin: 2.5rem 0; /* فاصله از بالا و پایین */
+}
+
+.footer-text-container {
+    margin-bottom: 2.5rem; /* ایجاد فاصله بین متن و خط پایینی */
+}
+
+.button-group {
+    margin-top: 0; /* حذف فاصله اضافی بالای دکمه */
+}
