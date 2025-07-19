@@ -586,17 +586,16 @@ hr.footer-hr {
     margin-bottom: 0; /* Override default h2 margin */
 }
 
-/* === FIX FOR LONG FILENAMES ON SMALL SCREENS === */
+/* === FIX FOR LONG FILENAMES ON SMALL SCREENS (Multi-line) === */
 #file-name-display {
-    /* Prevent the text from wrapping to a new line */
+    line-height: 1.5; /* Improves spacing between lines */
+}
+
+.filename-text {
+    display: inline-block;
+    width: 100%;
     white-space: nowrap;
-    
-    /* Hide the part of the text that overflows the container */
     overflow: hidden;
-    
-    /* Add an ellipsis (...) at the end of the overflowing text */
     text-overflow: ellipsis;
-    
-    /* Ensure the element doesn't push its container wider */
-    max-width: 100%;
+    vertical-align: middle; /* Aligns text nicely if it wraps */
 }
