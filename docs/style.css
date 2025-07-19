@@ -457,11 +457,57 @@ footer {
     line-height: 1.8;
     color: var(--subtle-text-color);
     font-family: var(--font-family);
+    direction: rtl; /* Added for RTL text display */
+    text-align: right; /* Added for RTL text alignment */
 }
 
 #download-btn {
     margin-top: 1.5rem;
 }
+
+/* Specific style for the stop button, overriding secondary-btn properties */
+#stop-translation-btn {
+    background-color: var(--error-color);
+    border: 1px solid var(--error-color); /* Match background for border */
+    color: white; /* Text color */
+    margin-top: 1rem; /* Space below live output */
+}
+
+#stop-translation-btn:hover:not(:disabled) {
+    background-color: #ff6a6a; /* Slightly lighter red on hover */
+    transform: none; /* Ensure no transform on hover for this button */
+}
+
+/* Styles for completeness message */
+#translation-status-message {
+    padding: 1rem 1.5rem; /* Add padding */
+    border-radius: 8px; /* Rounded corners */
+    margin-top: 1.5rem; /* Space above download button */
+    margin-bottom: 1rem; /* Space below if another element follows */
+    font-size: 1.1rem; /* Slightly larger text */
+    text-align: center; /* Centered text */
+    font-weight: bold; /* Bold text */
+    display: flex; /* Use flexbox for icon alignment */
+    align-items: center; /* Vertically align items */
+    justify-content: center; /* Horizontally center content */
+    gap: 0.8rem; /* Space between icon and text */
+    transition: all 0.3s ease; /* Smooth transition for color changes */
+}
+
+/* Status specific styles */
+#translation-status-message.status-complete {
+    background-color: #334d33; /* Dark green background */
+    border: 1px solid #66bb6a; /* Brighter green border */
+    color: #e0ffe0; /* Light green text */
+}
+
+#translation-status-message.status-incomplete,
+#translation-status-message.status-aborted { /* Also apply for aborted status */
+    background-color: #4d3333; /* Dark red background */
+    border: 1px solid var(--error-color); /* Red border */
+    color: #ffe0e0; /* Light red text */
+}
+
 
 /* === استایل‌های جدید برای فوتر و دکمه گیت‌هاب === */
 footer {
