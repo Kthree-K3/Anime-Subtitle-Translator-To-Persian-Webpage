@@ -30,7 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- 2. ثابت‌ها و متغیرهای اصلی ---
-   const DEFAULT_PROMPT = `پرامپت پیشرفته و یکپارچه برای ترجمه حرفه‌ای زیرنویس انیمه (فرمت 'میکرو دی وی دی') 
+    // IMPORTANT: DO NOT MODIFY THIS PROMPT. IT IS HIGHLY OPTIMIZED.
+    const DEFAULT_PROMPT = `پرامپت پیشرفته و یکپارچه برای ترجمه حرفه‌ای زیرنویس انیمه (فرمت 'میکرو دی وی دی') 
 
 مأموریت شما:
 شما یک دستیار هوش مصنوعی متخصص در ترجمه حرفه‌ای و بومی‌سازی زیرنویس انیمه هستید. وظیفه شما دریافت یک فایل زیرنویس انگلیسی با فرمت 'میکرو دی وی دی' و ارائه ترجمه‌ای بی‌نقص، روان، جذاب و وفادار به زبان فارسی است، به گونه‌ای که تجربه تماشای انیمه برای مخاطب فارسی‌زبان، غنی و لذت‌بخش باشد.
@@ -102,13 +103,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let prompts = [];
     let selectedPromptId = 'default';
 
-    // New variables for stopping translation and completeness check
-    let abortController = null; // For cancelling fetch requests
-    let originalLastEndFrame = 0; // To store the end frame of the last original subtitle entry
+    let abortController = null;
+    let originalLastEndFrame = 0;
+    
+    let ffprobeWorker = null;
+    let ffmpegWorker = null;
 
-    // --- 3. توابع تبدیل فرمت (بدون تغییر) ---
+
+    // --- 3. توابع تبدیل فرمت ---
     function timeToFrames(time, fps) {
         const parts = time.match(/(\d{2}):(\d{2}):(\d{2}),(\d{3})/);
+        if (!parts) return 0;
         const hours = parseInt(parts[1], 10);
         const minutes = parseInt(parts[2], 10);
         const seconds = parseInt(parts[3], 10);
@@ -139,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const milliseconds = Math.round((totalSeconds - Math.floor(totalSeconds)) * 1000);
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')},${milliseconds.toString().padStart(3, '0')}`;
     }
-    function convertMicroDVDtoSrt(microDVDContent, fps = 23.976) {
+       function convertMicroDVDtoSrt(microDVDContent, fps = 23.976) {
         const lines = microDVDContent.split('\n');
         let srt = '';
         let index = 1;
@@ -152,18 +157,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 let text = match[3];
                 const startTime = framesToSrtTime(startFrame, fps);
                 const endTime = framesToSrtTime(endFrame, fps);
-                text = text.replace(/\|/g, '\r\n');
-                const rtlFixedText = '\u202B' + text.trim() + '\u202C';
+
+                const rtlFixedText = text.replace(/\|/g, '\r\n').split('\r\n').map(line => `\u202B${line.trim()}\u202C`).join('\r\n');
+                
                 srt += `${index}\r\n${startTime} --> ${endTime}\r\n${rtlFixedText}\r\n\r\n`;
                 index++;
             }
         }
         return srt;
+       }
+
+    function cleanAssToSrt(assContent) {
+        const assDialoguePattern = /^Dialogue:\s*\d+,(\d+:\d{2}:\d{2}\.\d{2}),(\d+:\d{2}:\d{2}\.\d{2}),[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,([\s\S]*)$/;
+        const cleanTextFromAss = (text) => {
+            let cleaned = text.replace(/\{[^}]*\}/g, '');
+            cleaned = cleaned.replace(/\\N/g, '\n');
+            return cleaned;
+        };
+        const formatTimeToSrt = (assTime) => {
+            const parts = assTime.match(/(\d):(\d{2}):(\d{2})\.(\d{2})/);
+            if (!parts) return "00:00:00,000";
+            const h = parts[1].padStart(2, '0');
+            const m = parts[2];
+            const s = parts[3];
+            const ms = parseInt(parts[4], 10) * 10;
+            return `${h}:${m}:${s},${ms.toString().padStart(3, '0')}`;
+        };
+
+        let srtOutput = '';
+        let srtIndex = 1;
+        const lines = assContent.split('\n');
+        for (const line of lines) {
+            const match = line.trim().match(assDialoguePattern);
+            if (match) {
+                const srtStartTime = formatTimeToSrt(match[1]);
+                const srtEndTime = formatTimeToSrt(match[2]);
+                const cleanedText = cleanTextFromAss(match[3]).trim();
+                if (cleanedText) {
+                    srtOutput += `${srtIndex}\r\n`;
+                    srtOutput += `${srtStartTime} --> ${srtEndTime}\r\n`;
+                    srtOutput += `${cleanedText}\r\n\r\n`;
+                    srtIndex++;
+                }
+            }
+        }
+        return srtOutput.trim();
     }
+
 
     // --- 4. توابع مدیریت برنامه ---
 
-    // مدیریت مدل‌ها (بدون تغییر)
     function renderModels() {
         modelListDiv.innerHTML = '';
         models.forEach((model, index) => {
@@ -184,18 +227,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function addModel() { const displayName = prompt("یک نام نمایشی برای مدل وارد کنید (مثلا: Gemini Flash):"); if (!displayName) return; const apiName = prompt("نام دقیق API مدل را وارد کنید (مثلا: gemini-1.5-flash-latest):"); if (!apiName) return; if (models.some(m => m.apiName === apiName)) return alert("این مدل از قبل وجود دارد."); models.push({ displayName, apiName }); selectModel(apiName); }
     function deleteModel(index) { if (!confirm(`آیا از حذف مدل "${models[index].displayName}" مطمئن هستید؟`)) return; const deletedModelWasSelected = models[index].apiName === selectedModelApiName; models.splice(index, 1); if (deletedModelWasSelected && models.length > 0) { selectModel(models[0].apiName); } else { saveModels(); renderModels(); } }
 
-    // مدیریت پرامپت‌ها (منطق جدید)
     function renderPrompts() {
         promptListDiv.innerHTML = '';
-        // افزودن پرامپت پیش‌فرض
         const defaultPromptDiv = document.createElement('div');
         defaultPromptDiv.className = 'prompt-item';
         if ('default' === selectedPromptId) defaultPromptDiv.classList.add('selected');
         defaultPromptDiv.innerHTML = `<div class="prompt-info"><span class="prompt-display-name">پرامپت پیش‌فرض زیرنویس انگلیسی</span><span class="prompt-type-name">(توصیه شده - غیرقابل ویرایش)</span></div>`;
         defaultPromptDiv.addEventListener('click', () => selectPrompt('default'));
         promptListDiv.appendChild(defaultPromptDiv);
-
-        // افزودن پرامپت‌های سفارشی
         prompts.forEach((prompt) => {
             const promptDiv = document.createElement('div');
             promptDiv.className = 'prompt-item';
@@ -207,97 +246,125 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         updatePromptDisplay();
     }
-    
-    function updatePromptDisplay() {
-        const isDefault = selectedPromptId === 'default';
-        promptDisplayArea.value = getActivePromptContent();
-        promptDisplayArea.readOnly = isDefault;
-    }
-
-    function getActivePromptContent() {
-        if (selectedPromptId === 'default') {
-            return DEFAULT_PROMPT;
-        }
-        const selected = prompts.find(p => p.id === selectedPromptId);
-        return selected ? selected.content : DEFAULT_PROMPT;
-    }
-
+    function updatePromptDisplay() { const isDefault = selectedPromptId === 'default'; promptDisplayArea.value = getActivePromptContent(); promptDisplayArea.readOnly = isDefault; }
+    function getActivePromptContent() { if (selectedPromptId === 'default') { return DEFAULT_PROMPT; } const selected = prompts.find(p => p.id === selectedPromptId); return selected ? selected.content : DEFAULT_PROMPT; }
     function savePrompts() { localStorage.setItem('userPrompts', JSON.stringify(prompts)); localStorage.setItem('selectedPrompt', selectedPromptId); }
+    function loadPrompts() { const savedPrompts = localStorage.getItem('userPrompts'); const savedSelected = localStorage.getItem('selectedPrompt'); prompts = savedPrompts ? JSON.parse(savedPrompts) : []; selectedPromptId = savedSelected || 'default'; renderPrompts(); }
+    function selectPrompt(id) { selectedPromptId = id; savePrompts(); renderPrompts(); }
+    function addPrompt() { const name = prompt("یک نام برای پرامپت سفارشی خود وارد کنید:"); if (!name || name.trim() === '') return; const newPrompt = { id: Date.now().toString(), name: name.trim(), content: `// پرامپت جدید برای "${name.trim()}"\n// محتوای خود را اینجا وارد کنید.` }; prompts.push(newPrompt); selectPrompt(newPrompt.id); }
+    function deletePrompt(id) { const promptToDelete = prompts.find(p => p.id === id); if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; prompts = prompts.filter(p => p.id !== id); if (selectedPromptId === id) { selectPrompt('default'); } else { savePrompts(); renderPrompts(); } }
+    function handlePromptEditing() { if (selectedPromptId === 'default') return; const currentPrompt = prompts.find(p => p.id === selectedPromptId); if (currentPrompt) { currentPrompt.content = promptDisplayArea.value; savePrompts(); } }
+    function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); apiKeyInput.value = ''; loadModels(); loadPrompts(); checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
     
-    function loadPrompts() { 
-        const savedPrompts = localStorage.getItem('userPrompts'); 
-        const savedSelected = localStorage.getItem('selectedPrompt'); 
-        prompts = savedPrompts ? JSON.parse(savedPrompts) : []; 
-        selectedPromptId = savedSelected || 'default'; 
-        renderPrompts(); 
-    }
-
-    function selectPrompt(id) { 
-        selectedPromptId = id; 
-        savePrompts(); 
-        renderPrompts(); 
-    }
-    
-    function addPrompt() {
-        const name = prompt("یک نام برای پرامپت سفارشی خود وارد کنید:");
-        if (!name || name.trim() === '') return;
-        
-        const newPrompt = { 
-            id: Date.now().toString(), 
-            name: name.trim(), 
-            content: `// پرامپت جدید برای "${name.trim()}"\n// محتوای خود را اینجا وارد کنید.`
-        };
-        prompts.push(newPrompt);
-        selectPrompt(newPrompt.id);
-    }
-    
-    function deletePrompt(id) {
-        const promptToDelete = prompts.find(p => p.id === id);
-        if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return;
-        prompts = prompts.filter(p => p.id !== id);
-        if (selectedPromptId === id) {
-            selectPrompt('default');
-        } else {
-            savePrompts();
-            renderPrompts();
-        }
-    }
-    
-    function handlePromptEditing() {
-        if (selectedPromptId === 'default') return;
-        const currentPrompt = prompts.find(p => p.id === selectedPromptId);
-        if (currentPrompt) {
-            currentPrompt.content = promptDisplayArea.value;
-            savePrompts();
-        }
-    }
-
-    // *** تابع اصلاح شده برای بازنشانی کلی ***
-    function resetAllSettings() {
-        if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) {
-            // 1. پاک کردن تمام داده‌های ذخیره شده
-            localStorage.removeItem('geminiApiKey');
-            localStorage.removeItem('userModels');
-            localStorage.removeItem('selectedModel');
-            localStorage.removeItem('userPrompts');
-            localStorage.removeItem('selectedPrompt');
-
-            // 2. ریست کردن مقادیر در رابط کاربری
-            apiKeyInput.value = '';
-
-            // 3. بارگذاری مجدد تنظیمات پیش‌فرض به صورت دستی (به جای ریلود صفحه)
-            loadModels();
-            loadPrompts();
-            checkFormValidity();
-            
-            alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.');
-        }
-    }
-    
-    // توابع عمومی (بدون تغییر)
     function checkFormValidity() { translateBtn.disabled = !(uploadedFile && apiKeyInput.value.trim() !== ''); }
-    function handleFileSelect(file) { if (file && file.name.endsWith('.srt')) { uploadedFile = file; const filenameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')); fileNameDisplay.textContent = `فایل انتخاب شده: ${filenameWithoutExt}`; errorDisplay.classList.add('hidden'); } else { alert('لطفاً یک فایل با فرمت .srt انتخاب کنید.'); uploadedFile = null; fileNameDisplay.textContent = ''; } checkFormValidity(); }
+    async function handleFileSelect(file) {
+        uploadedFile = null;
+        fileNameDisplay.textContent = '';
+        errorDisplay.classList.add('hidden');
+        checkFormValidity();
+
+        if (!file) return;
+
+        const fileName = file.name.toLowerCase();
+        const supportedVideoFormats = ['.mkv', '.mp4'];
+        const supportedSubtitleFormats = ['.srt', '.ass'];
+
+        if (supportedSubtitleFormats.some(ext => fileName.endsWith(ext))) {
+            uploadedFile = file;
+            const filenameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+            fileNameDisplay.textContent = `فایل انتخاب شده: ${filenameWithoutExt}${fileName.substring(file.name.lastIndexOf('.'))}`;
+            checkFormValidity();
+        } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
+            fileNameDisplay.textContent = `در حال تحلیل فایل ویدیویی: ${file.name}...`;
+            translateBtn.disabled = true;
+
+            try {
+                const result = await runFFprobeCommand(file, ['/data/' + file.name, '-print_format', 'json', '-show_streams', '-show_format']);
+                const parsedResult = JSON.parse(result.stdout);
+                if (!parsedResult.streams || parsedResult.streams.length === 0) throw new Error('هیچ ترکی در فایل ویدیویی یافت نشد.');
+
+                const subtitleStreams = parsedResult.streams.filter(s => s.codec_type === 'subtitle');
+                if (subtitleStreams.length === 0) {
+                    alert('هیچ ترک زیرنویسی در این فایل ویدیویی یافت نشد.');
+                    fileNameDisplay.textContent = '';
+                    return;
+                }
+
+                const streamOptions = subtitleStreams.map((s, index) => {
+                    const lang = s.tags?.language || 'unk';
+                    const title = s.tags?.title ? `(${s.tags.title})` : '';
+                    return `${index + 1}. [${lang}] ${s.codec_name} ${title}`.trim();
+                }).join('\n');
+                
+                let selectedIndex = -1;
+                const promptMessage = `چندین ترک زیرنویس در فایل یافت شد. لطفاً شماره ترک مورد نظر را وارد کنید:\n\n${streamOptions}`;
+                while (selectedIndex < 0 || selectedIndex >= subtitleStreams.length) {
+                    const input = prompt(promptMessage);
+                    if (input === null) { fileNameDisplay.textContent = ''; return; }
+                    selectedIndex = parseInt(input, 10) - 1;
+                    if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= subtitleStreams.length) {
+                        alert('انتخاب نامعتبر. لطفاً یک شماره صحیح از لیست وارد کنید.');
+                        selectedIndex = -1;
+                    }
+                }
+
+                const selectedStream = subtitleStreams[selectedIndex];
+                uploadedFile = {
+                    file: file,
+                    streamIndex: selectedStream.index,
+                    type: selectedStream.codec_name,
+                    name: `${file.name.substring(0, file.name.lastIndexOf('.'))}.track${selectedStream.index}.${selectedStream.codec_name}`
+                };
+                fileNameDisplay.textContent = `ترک انتخاب شده: [${selectedStream.tags?.language || 'unk'}] (فرمت: ${selectedStream.codec_name})`;
+                checkFormValidity();
+
+            } catch (error) {
+                console.error("Error processing video file:", error);
+                errorMessage.textContent = `خطا در تحلیل فایل ویدیویی: ${error.message}`;
+                errorDisplay.classList.remove('hidden');
+                fileNameDisplay.textContent = '';
+            }
+        } else {
+            alert('فرمت فایل پشتیبانی نمی‌شود. لطفاً یک فایل با فرمت .srt, .ass, .mkv, .mp4 انتخاب کنید.');
+        }
+    }
     async function handleFetchError(response) { const errorText = await response.text(); try { return JSON.parse(errorText).error?.message || errorText; } catch (e) { return errorText; } }
+
+    function runFFprobeCommand(file, args) {
+        return new Promise((resolve, reject) => {
+            if (ffprobeWorker) ffprobeWorker.terminate();
+            ffprobeWorker = new Worker('./ffprobe-worker-mkve.js');
+            let stdout = '', stderr = '';
+            ffprobeWorker.addEventListener('error', (e) => reject(new Error(`FFprobe Worker error: ${e.message}`)));
+            ffprobeWorker.addEventListener('message', (e) => {
+                const msg = e.data;
+                switch (msg.type) {
+                    case 'ready': ffprobeWorker.postMessage({ type: 'run', arguments: args, mounts: [{ type: 'WORKERFS', opts: { files: [file] }, mountpoint: '/data' }] }); break;
+                    case 'stdout': stdout += msg.data + '\n'; break;
+                    case 'stderr': stderr += msg.data + '\n'; break;
+                    case 'done': ffprobeWorker.terminate(); ffprobeWorker = null; resolve({ stdout, stderr, files: msg.data.MEMFS }); break;
+                }
+            });
+        });
+    }
+    function runFFmpegCommand(file, args) {
+        return new Promise((resolve, reject) => {
+            if (ffmpegWorker) ffmpegWorker.terminate();
+            ffmpegWorker = new Worker('./ffmpeg-worker-mkve.js');
+            let stdout = '', stderr = '';
+            ffmpegWorker.addEventListener('error', (e) => reject(new Error(`FFmpeg Worker error: ${e.message}`)));
+            ffmpegWorker.addEventListener('message', (e) => {
+                const msg = e.data;
+                switch (msg.type) {
+                    case 'ready': ffmpegWorker.postMessage({ type: 'run', arguments: args, mounts: [{ type: 'WORKERFS', opts: { files: [file] }, mountpoint: '/data' }] }); break;
+                    case 'stdout': stdout += msg.data + '\n'; break;
+                    case 'stderr': stderr += msg.data + '\n'; break;
+                    case 'done': ffmpegWorker.terminate(); ffmpegWorker = null; resolve({ stdout, stderr, files: msg.data.MEMFS }); break;
+                    case 'error': ffmpegWorker.terminate(); ffmpegWorker = null; reject(new Error(msg.data)); break;
+                }
+            });
+        });
+    }
 
     async function uploadFileToGemini(processedText, originalFilename, apiKey) {
         progressTitle.textContent = "مرحله ۲ از ۴: آپلود فایل به سرور گوگل...";
@@ -309,12 +376,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!response.ok) throw new Error(`خطا در آپلود فایل: ${await handleFetchError(response)}`);
         return (await response.json()).file.uri;
     }
-    
     async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSignal) {
         progressTitle.textContent = "مرحله ۳ از ۴: ارسال درخواست به هوش مصنوعی...";
         const apiKey = apiKeyInput.value.trim();
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModelApiName}:streamGenerateContent?alt=sse&key=${apiKey}`;
-        
         try {
             const activePrompt = getActivePromptContent();
             const response = await fetch(url, {
@@ -324,23 +389,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     contents: [{ parts: [{ text: activePrompt }, { fileData: { mime_type: "text/plain", file_uri: fileUri } }] }],
                     generationConfig: { temperature: parseFloat(tempSlider.value), topP: parseFloat(topPSlider.value) }
                 }),
-                signal: abortSignal // Pass the abort signal here
+                signal: abortSignal
             });
-
             if (!response.ok) throw new Error(await handleFetchError(response));
-
             progressTitle.textContent = "مرحله ۴ از ۴: در حال دریافت ترجمه...";
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            
             let fullText = '';
             while (true) {
                 const { value, done } = await reader.read();
                 if (done) break;
-                
                 const chunk = decoder.decode(value);
                 const lines = chunk.split('\n');
-                
                 for (const line of lines) {
                     if (line.startsWith('data: ')) {
                         const jsonStr = line.substring(5);
@@ -356,33 +416,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             onEnd(fullText);
-
         } catch(error) { 
-            // Handle AbortError specifically
             if (error.name === 'AbortError') {
                 console.log('Fetch aborted by user.');
-                throw error; // Re-throw to be caught by the main translateBtn catch block
+                throw error;
             }
             onError(error); 
         }
     }
-
-    // New helper function for completeness check
     function checkTranslationCompleteness(translatedMicroDVD, originalLastEndFrame) {
         const lines = translatedMicroDVD.split('\n');
         const lineRegex = /\{(\d+)\}\{(\d+)\}(.*)/;
-        
-        // Iterate backwards to find the last valid MicroDVD line
         for (let i = lines.length - 1; i >= 0; i--) {
             const line = lines[i].trim();
             const match = line.match(lineRegex);
             if (match) {
                 const translatedEndFrame = parseInt(match[2], 10);
-                // Compare with originalLastEndFrame
                 return translatedEndFrame === originalLastEndFrame;
             }
         }
-        // If no valid MicroDVD line was found in the translated content
         return false; 
     }
     
@@ -413,69 +465,97 @@ document.addEventListener('DOMContentLoaded', () => {
     translateBtn.addEventListener('click', async () => {
         if (!uploadedFile || !apiKeyInput.value.trim()) return;
 
-        // Reset UI state for new translation
-        progressSection.classList.remove('hidden'); // Make sure progress section is visible from the start
+        progressSection.classList.remove('hidden');
         downloadBtn.classList.add('hidden');
         errorDisplay.classList.add('hidden');
-        translationStatusMessage.classList.add('hidden'); // Hide status message at start of new translation
-        stopTranslationBtn.classList.remove('hidden'); // Show stop button
-        stopTranslationBtn.disabled = false; // Enable stop button
+        translationStatusMessage.classList.add('hidden');
+        stopTranslationBtn.classList.remove('hidden');
+        stopTranslationBtn.disabled = false;
         translateBtn.disabled = true;
         progressBarFill.style.width = '0%';
         progressText.textContent = '۰٪';
-        liveOutput.textContent = 'در حال انجام مرحلهٔ تفکر هوش مصنوعی هستیم. این فرایند ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید...';
-        progressTitle.textContent = 'مرحله ۱ از ۴: تبدیل SRT به MicroDVD...';
-
-        // Clear any previous status classes
+        liveOutput.textContent = 'در حال آماده سازی برای ورود به مرحلهٔ تفکر هوش مصنوعی هستیم. اتمام فرایند مرحلهٔ تفکر ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید...';
+        progressTitle.textContent = 'مرحله ۱ از ۴: پردازش فایل ورودی...';
         translationStatusMessage.classList.remove('status-complete', 'status-incomplete', 'status-aborted');
-
-        // Initialize abort controller for this translation session
         abortController = new AbortController();
         const signal = abortController.signal;
         
         try {
-            const fileContent = await uploadedFile.text();
-            const microDVDContent = convertSrtToMicroDVD(fileContent);
-            if (!microDVDContent) throw new Error("فایل SRT ورودی خالی است یا فرمت آن صحیح نیست.");
-            
-            originalMicroDVDLines = microDVDContent.split('\n').length;
-            
-            // Extract the last end frame from the original MicroDVD content
-            const microDVDLines = microDVDContent.split('\n');
-            const lastOriginalLine = microDVDLines[microDVDLines.length - 1];
-            const originalLineMatch = lastOriginalLine.match(/\{(\d+)\}\{(\d+)\}(.*)/);
-            if (originalLineMatch) {
-                originalLastEndFrame = parseInt(originalLineMatch[2], 10);
-            } else {
-                originalLastEndFrame = 0; // Fallback if last line doesn't match
+            let cleanSrtContent = '';
+            let outputFileNameBase = '';
+
+            // --- Pre-processing logic ---
+            if (uploadedFile.type) { // It's an extracted stream from a video file
+                const videoFile = uploadedFile.file;
+                outputFileNameBase = videoFile.name.substring(0, videoFile.name.lastIndexOf('.'));
+                progressTitle.textContent = `مرحله ۱ از ۴: استخراج زیرنویس از فایل ویدیویی...`;
+                
+                // --- FINAL CORRECTED FFMPEG COMMAND LOGIC ---
+                const outputFormat = uploadedFile.type === 'subrip' ? 'srt' : 'ass';
+                const outputFilename = `output.${outputFormat}`;
+
+                const ffmpegResult = await runFFmpegCommand(videoFile, [
+                    '-i', '/data/' + videoFile.name,
+                    '-map', `0:${uploadedFile.streamIndex}`,
+                    '-codec', 'copy',
+                    outputFilename
+                ]);
+
+                if (!ffmpegResult.files || ffmpegResult.files.length === 0) {
+                    throw new Error(`استخراج زیرنویس از فایل ویدیویی ناموفق بود. خطای داخلی FFmpeg:\n${ffmpegResult.stderr}`);
+                }
+                
+                const rawSubtitleContent = await new Response(ffmpegResult.files[0].data).text();
+                
+                if (outputFormat === 'ass') {
+                    progressTitle.textContent = `مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...`;
+                    cleanSrtContent = cleanAssToSrt(rawSubtitleContent);
+                } else { // It's SRT, use it directly
+                    cleanSrtContent = rawSubtitleContent;
+                }
+
+            } else { // It's a direct file upload
+                outputFileNameBase = uploadedFile.name.substring(0, uploadedFile.name.lastIndexOf('.'));
+                const fileContent = await uploadedFile.text();
+                if (uploadedFile.name.toLowerCase().endsWith('.ass')) {
+                    progressTitle.textContent = `مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...`;
+                    cleanSrtContent = cleanAssToSrt(fileContent);
+                } else { // Assume SRT
+                    cleanSrtContent = fileContent;
+                }
+            }
+            // --- End of Pre-processing ---
+
+            if (!cleanSrtContent || cleanSrtContent.trim() === '') {
+                 throw new Error("فایل زیرنویس پس از پردازش خالی است. ممکن است فرمت داخلی آن پشتیبانی نشود.");
             }
 
-            const fileUri = await uploadFileToGemini(microDVDContent, uploadedFile.name.replace('.srt', '.txt'), apiKeyInput.value.trim());
+            const microDVDContent = convertSrtToMicroDVD(cleanSrtContent);
+            if (!microDVDContent) throw new Error("فایل زیرنویس ورودی خالی است یا فرمت آن صحیح نیست.");
+            
+            originalMicroDVDLines = microDVDContent.split('\n').length;
+            const microDVDLines = microDVDContent.split('\n');
+            const lastOriginalLine = microDVDLines[microDVDLines.length - 1] || '';
+            const originalLineMatch = lastOriginalLine.match(/\{(\d+)\}\{(\d+)\}(.*)/);
+            originalLastEndFrame = originalLineMatch ? parseInt(originalLineMatch[2], 10) : 0;
+
+            const fileUri = await uploadFileToGemini(microDVDContent, outputFileNameBase + '.txt', apiKeyInput.value.trim());
 
             const onChunkReceived = (currentFullText) => {
-                const translatedLines = currentFullText.split('\n').map(line => {
-                    const match = line.match(/\{(\d+)\}\{(\d+)\}(.*)/);
-                    // Only display the text part, clean up pipe symbols for live view
-                    return match ? match[3].replace(/\|/g, ' ') : '';
-                });
-                liveOutput.textContent = translatedLines.join('\n');
+                const translatedLines = currentFullText.split('\n');
+                liveOutput.textContent = translatedLines.map(line => (line.match(/\{(\d+)\}\{(\d+)\}(.*)/) || [])[3] || '').join('\n').replace(/\|/g, ' ');
                 liveOutput.scrollTop = liveOutput.scrollHeight;
-                
                 const percentage = Math.min(99, Math.round((translatedLines.length / originalMicroDVDLines) * 100));
                 progressBarFill.style.width = `${percentage}%`;
                 progressText.textContent = `${percentage}٪`;
             };
-
             const onStreamEnd = (finalText) => {
                 progressTitle.textContent = "ترجمه با موفقیت انجام شد!";
                 progressBarFill.style.width = '100%';
                 progressText.textContent = '۱۰۰٪';
                 translatedMicroDVDContent = finalText;
-
-                // Perform completeness check
                 const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
-                translationStatusMessage.classList.remove('hidden');
-                translationStatusMessage.classList.remove('status-incomplete', 'status-aborted'); // Ensure clean state
+                translationStatusMessage.classList.remove('hidden', 'status-incomplete', 'status-aborted');
                 if (isComplete) {
                     translationStatusMessage.classList.add('status-complete');
                     translationStatusMessage.innerHTML = '✔️ ترجمه کامل است.';
@@ -483,49 +563,41 @@ document.addEventListener('DOMContentLoaded', () => {
                     translationStatusMessage.classList.add('status-incomplete');
                     translationStatusMessage.innerHTML = '⚠️ ترجمه ممکن است ناقص باشد.';
                 }
-
                 downloadBtn.classList.remove('hidden');
                 translateBtn.disabled = false;
-                stopTranslationBtn.classList.add('hidden'); // Hide stop button
+                stopTranslationBtn.classList.add('hidden');
             };
-            
             const onStreamError = (error) => { throw error; };
 
-            await getTranslationStream(fileUri, onChunkReceived, onStreamEnd, onStreamError, signal); // Pass the signal
+            await getTranslationStream(fileUri, onChunkReceived, onStreamEnd, onStreamError, signal);
 
         } catch (error) {
             console.error(error);
             translateBtn.disabled = false;
-            stopTranslationBtn.classList.add('hidden'); // Hide stop button
-            downloadBtn.classList.add('hidden'); // Hide download button on error/abort initially
-
-            // Update progress section for error state
+            stopTranslationBtn.classList.add('hidden');
+            downloadBtn.classList.add('hidden');
             progressTitle.textContent = 'خطا در ترجمه!';
             progressBarFill.style.width = '0%';
             progressText.textContent = '۰٪';
-            liveOutput.textContent = ''; // Clear live output to show only error related messages
-
-            // Show and style status message for error/abort
+            liveOutput.textContent = '';
             translationStatusMessage.classList.remove('hidden', 'status-complete');
             translationStatusMessage.classList.add('status-incomplete', 'status-aborted');
-
             if (error.name === 'AbortError') {
                 errorMessage.textContent = 'عملیات ترجمه توسط کاربر متوقف شد.';
                 translationStatusMessage.innerHTML = '❌ ترجمه توسط کاربر متوقف شد.';
             } else {
                 errorMessage.textContent = error.message || 'خطایی نامشخص رخ داد.';
-                translationStatusMessage.innerHTML = '❌ خطایی در ترجمه رخ داد.'; // Generic error message for UI status
+                translationStatusMessage.innerHTML = '❌ خطایی در ترجمه رخ داد.';
             }
-            errorDisplay.classList.remove('hidden'); // Still show the detailed error below
+            errorDisplay.classList.remove('hidden');
         }
     });
 
     stopTranslationBtn.addEventListener('click', () => {
         if (abortController) {
             abortController.abort();
-            stopTranslationBtn.disabled = true; // Disable itself immediately
+            stopTranslationBtn.disabled = true;
             progressTitle.textContent = 'در حال توقف...';
-            // The catch block in translate-btn listener will handle UI reset
         }
     });
 
@@ -533,14 +605,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!translatedMicroDVDContent) return;
         
         const finalSrtContent = convertMicroDVDtoSrt(translatedMicroDVDContent);
-
-        const originalFilename = uploadedFile.name;
+        
+        let originalFilename;
+        if (uploadedFile.type) { // From video file
+            originalFilename = uploadedFile.file.name;
+        } else { // Direct upload
+            originalFilename = uploadedFile.name;
+        }
+        
         const lastDotIndex = originalFilename.lastIndexOf('.');
         const filenameWithoutExt = (lastDotIndex === -1) ? originalFilename : originalFilename.substring(0, lastDotIndex);
         const newFilename = `${filenameWithoutExt}.fa.srt`;
         
         const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
-        
         const blob = new Blob([bom, finalSrtContent], { type: 'application/x-subrip;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
