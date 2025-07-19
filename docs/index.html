@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ترجمه زیرنویس انیمه با Gemini</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1><span class="icon">🚀</span> ترجمه زیرنویس انیمه</h1>
+            <p class="subtitle">زیرنویس‌های خود را با قدرت مدل‌های Gemini به فارسی روان ترجمه کنید</p>
+        </header>
+
+        <main>
+            <section id="upload-section" class="card">
+                <h2>۱. آپلود فایل زیرنویس</h2>
+                <div id="drop-zone">
+                    <p>فایل زیرنویس خود (srt) را به اینجا بکشید یا برای انتخاب کلیک کنید</p>
+                    <input type="file" id="file-input" accept=".srt" hidden>
+                    <p id="file-name-display"></p>
+                </div>
+            </section>
+
+            <section id="api-key-section" class="card">
+                <h2>۲. کلید Google AI API</h2>
+                <p class="description">
+                    برای دریافت کلید، به <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">این آدرس</a> بروید و روی دکمه <strong>Create API key</strong> کلیک کنید. کلید دریافتی را در کادر زیر وارد نمایید.
+                    <br>
+                    <strong>نکته مهم:</strong> به دلیل تحریم‌ها، برای ورود به این سایت و دریافت کلید، حتماً از <strong>فیلترشکن قوی</strong> استفاده کنید. کلید شما فقط در حافظه مرورگر ذخیره می‌شود و به جایی ارسال نمی‌گردد.
+                </p>
+                <input type="password" id="api-key-input" placeholder="کلید API خود را اینجا وارد کنید...">
+            </section>
+
+            <section id="control-section">
+                <details>
+                    <summary>تنظیمات پیشرفته</summary>
+                    <div class="advanced-settings card">
+                        <div class="setting">
+                            <label>مدل هوش مصنوعی</label>
+                            <p class="description">مدل مورد نظر را انتخاب کنید یا مدل جدیدی اضافه نمایید.</p>
+                            <div id="model-list"></div>
+                            <button id="add-model-btn" class="secondary-btn">+ افزودن مدل جدید</button>
+                        </div>
+                        
+                        <div class="setting">
+                            <div class="setting-label">
+                                <label for="temperature-slider">دما (Temperature): <span id="temp-value">0.3</span></label>
+                                <div class="help-tooltip-container"><span class="help-icon">?</span><div class="help-tooltip-text">میزان خلاقیت یا تصادفی بودن متن خروجی را تعیین می‌کند.<br>مقادیر پایین‌تر (نزدیک به ۰) باعث تولید متنی قابل پیش‌بینی‌تر و متمرکزتر می‌شود، در حالی که مقادیر بالاتر (نزدیک به ۱) متنی متنوع‌تر و خلاقانه‌تر ایجاد می‌کند.<br><b>مقدار پیشفرض: 0.3</b></div></div>
+                            </div>
+                            <input type="range" id="temperature-slider" min="0" max="1" step="0.1" value="0.3">
+                        </div>
+                        
+                        <div class="setting">
+                             <div class="setting-label">
+                                <label for="top-p-slider">Top-P: <span id="top-p-value">0.9</span></label>
+                                <div class="help-tooltip-container"><span class="help-icon">?</span><div class="help-tooltip-text">یک روش نمونه‌برداری است که در آن مدل، مجموعه‌ای از محتمل‌ترین کلمات را که مجموع احتمال آن‌ها به عدد TopP می‌رسد، در نظر می‌گیرد.<br>برای مثال، مقدار 0.9 باعث می‌شود فقط کلماتی که در 90% بالای توزیع احتمال قرار دارند، برای تولید انتخاب شوند.<br>این روش به کنترل تنوع متن کمک کرده و جایگزین مناسبی برای Temperature است.<br><b>مقدار پیشفرض: 0.9</b></div></div>
+                            </div>
+                            <input type="range" id="top-p-slider" min="0" max="1" step="0.05" value="0.9">
+                        </div>
+                        
+                        <div class="setting">
+                            <label>پرامپت سیستم</label>
+                            <p class="description">پرامپت پیش‌فرض را استفاده کنید یا پرامپت سفارشی خود را اضافه و ویرایش نمایید.</p>
+                            <div id="prompt-list"></div>
+                            <button id="add-prompt-btn" class="secondary-btn">+ افزودن پرامپت جدید</button>
+                            <label class="prompt-display-label">محتوای پرامپت (برای ویرایش پرامپت سفارشی، آن را از لیست بالا انتخاب کنید):</label>
+                            <textarea id="prompt-display-area" rows="10"></textarea>
+                        </div>
+                        
+                        <div class="setting">
+                            <label>بازنشانی تنظیمات</label>
+                             <p class="description">با کلیک روی این دکمه، تمام تنظیمات سفارشی شما (شامل کلید API، لیست مدل‌ها و لیست پرامپت‌ها) حذف شده و برنامه به حالت اولیه بازمی‌گردد.</p>
+                            <button id="reset-all-btn" class="secondary-btn">بازنشانی کل تنظیمات به حالت اولیه</button>
+                        </div>
+                    </div>
+                </details>
+
+                <p class="description" style="text-align: center; font-weight: bold; color: var(--accent-color); margin-top: 1rem;">توجه: فیلترشکن شما باید در تمام طول فرآیند ترجمه روشن باقی بماند.</p>
+                <button id="translate-btn" disabled>
+                    <span class="icon">⚡️</span> شروع ترجمه
+                </button>
+            </section>
+
+            <section id="progress-section" class="card hidden">
+                <h2 id="progress-title">در حال ترجمه...</h2>
+                <div class="progress-container">
+                    <div id="progress-bar">
+                        <div id="progress-bar-fill"></div>
+                    </div>
+                    <span id="progress-text">۰٪</span>
+                </div>
+                <pre id="live-output"></pre>
+                <button id="download-btn" class="hidden"><span class="icon">📥</span> دانلود فایل SRT نهایی</button>
+            </section>
+
+            <div id="error-display" class="hidden">
+                <p>خطایی رخ داد!</p>
+                <pre id="error-message"></pre>
+            </div>
+        </main>
+
+        <footer>
+            <p>ساخته شده با ❤️ بر اساس پروژه <a href="https://kthree-k3.github.io/Anime-Subtitle-Translation-To-Persian/" target="_blank">اصلی</a></p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>

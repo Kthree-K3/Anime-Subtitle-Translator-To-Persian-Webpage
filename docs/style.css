@@ -1,0 +1,460 @@
+/* --- تنظیمات کلی و ریشه --- */
+:root {
+    --bg-color: #1a1a1a;
+    --card-color: #2a2a2a;
+    --border-color: #444;
+    --text-color: #e0e0e0;
+    --subtle-text-color: #a0a0a0;
+    --accent-color: #ff477e; /* رنگ شاخص صورتی/قرمز */
+    --accent-color-hover: #ff6aa2;
+    --error-color: #ff5252;
+    --font-family: 'Vazirmatn', sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 2rem 1rem;
+    line-height: 1.7;
+    direction: rtl;
+}
+
+/* --- استایل کلی لینک‌ها --- */
+a {
+    color: var(--accent-color);
+    text-decoration: none;
+    font-weight: 500; /* کمی وزن بیشتر برای خوانایی بهتر */
+}
+
+a:hover {
+    text-decoration: underline;
+    color: var(--accent-color-hover);
+}
+
+
+/* --- ساختار اصلی --- */
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+}
+
+header .subtitle {
+    font-size: 1.1rem;
+    color: var(--subtle-text-color);
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.card {
+    background-color: var(--card-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+/* --- استایل فرم‌ها و ورودی‌ها --- */
+h2 {
+    color: var(--text-color);
+    margin-top: 0;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 0.5rem;
+    display: inline-block;
+}
+
+.description {
+    font-size: 0.9rem;
+    color: var(--subtle-text-color);
+    margin-bottom: 1rem;
+}
+
+input[type="password"],
+textarea {
+    width: 100%;
+    padding: 0.8rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-family: var(--font-family);
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input[type="password"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 8px var(--accent-color);
+}
+
+/* --- بخش آپلود فایل --- */
+#drop-zone {
+    border: 3px dashed var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+#drop-zone.dragover {
+    background-color: #333;
+    border-color: var(--accent-color);
+}
+
+#file-name-display {
+    color: var(--accent-color);
+    font-weight: bold;
+    margin-top: 1rem;
+}
+
+/* --- تنظیمات پیشرفته --- */
+details {
+    margin-bottom: 1.5rem;
+}
+
+details summary {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+details summary:hover {
+    background-color: var(--card-color);
+}
+
+.advanced-settings {
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+.setting {
+    margin-bottom: 2rem;
+}
+
+.setting label {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+input[type="range"] {
+    width: 100%;
+    cursor: pointer;
+}
+
+/* --- دکمه‌ها --- */
+button {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    font-family: var(--font-family);
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    transition: background-color 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+button:hover:not(:disabled) {
+    background-color: var(--accent-color-hover);
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    background-color: #555;
+    color: #999;
+    cursor: not-allowed;
+}
+
+/* --- بخش نتیجه و لودینگ --- */
+.hidden {
+    display: none !important;
+}
+
+#error-display {
+    text-align: right;
+    background-color: #3b2020;
+    border: 1px solid var(--error-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+#error-message {
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--subtle-text-color);
+    font-family: monospace;
+    direction: ltr;
+    text-align: left;
+}
+
+/* --- فوتر --- */
+footer {
+    text-align: center;
+    margin-top: 4rem;
+    color: var(--subtle-text-color);
+}
+
+/* === استایل‌های مدیریت مدل و پرامپت === */
+#model-list, #prompt-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.model-item, .prompt-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.model-item.selected, .prompt-item.selected {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 8px rgba(255, 71, 126, 0.5);
+}
+
+.model-item:not(.selected):hover, .prompt-item:not(.selected):hover {
+    background-color: #3c3c3c;
+}
+
+.model-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.model-display-name, .prompt-display-name {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.model-api-name, .prompt-type-name {
+    font-size: 0.85rem;
+    color: var(--subtle-text-color);
+    font-family: monospace;
+}
+
+.delete-model-btn {
+    background: #4f4f4f;
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    cursor: pointer;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    flex-shrink: 0;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease-in-out;
+}
+
+.model-item:hover .delete-model-btn, .prompt-item:hover .delete-model-btn {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.delete-model-btn:hover {
+    background-color: var(--error-color);
+    border-color: var(--error-color);
+    color: white;
+}
+
+.trash-icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* === استایل دکمه‌های ثانویه === */
+.secondary-btn {
+    background-color: #444;
+    color: var(--text-color);
+    font-size: 1rem;
+    padding: 0.5rem 1rem;
+    width: auto;
+    font-weight: normal;
+}
+.secondary-btn:hover:not(:disabled) {
+    background-color: #555;
+    transform: none;
+}
+.small-btn {
+    font-size: 0.8rem;
+    padding: 0.2rem 0.6rem;
+}
+
+.prompt-display-label {
+    display: block;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--subtle-text-color);
+}
+
+#prompt-display-area[readonly] {
+    background-color: #1f1f1f;
+    cursor: default;
+    color: var(--subtle-text-color);
+    resize: vertical;
+}
+
+/* === استایل‌های راهنما (Tooltip) === */
+.setting-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.help-tooltip-container {
+    position: relative;
+    display: inline-flex;
+}
+
+.help-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background-color: #555;
+    color: var(--text-color);
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: help;
+    user-select: none;
+}
+
+.help-tooltip-text {
+    visibility: hidden;
+    opacity: 0;
+    width: 300px;
+    background-color: #3c3c3c;
+    color: var(--text-color);
+    text-align: right;
+    border-radius: 8px;
+    padding: 1rem;
+    position: absolute;
+    z-index: 10;
+    bottom: 140%;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    line-height: 1.6;
+    font-size: 0.9rem;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.help-tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #3c3c3c transparent transparent transparent;
+}
+
+.help-tooltip-container:hover .help-tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* === استایل‌های جدید برای بخش پیشرفت === */
+#progress-section {
+    padding: 2rem;
+}
+
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+#progress-bar {
+    flex-grow: 1;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    height: 20px;
+    overflow: hidden;
+}
+
+#progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background-color: var(--accent-color);
+    transition: width 0.3s ease-out;
+}
+
+#progress-text {
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+#live-output {
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    height: 200px;
+    max-height: 40vh;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    color: var(--subtle-text-color);
+}
+
+#download-btn {
+    margin-top: 1.5rem;
+}
