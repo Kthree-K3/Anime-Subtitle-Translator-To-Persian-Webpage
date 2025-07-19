@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const defaultPromptDiv = document.createElement('div');
         defaultPromptDiv.className = 'prompt-item';
         if ('default' === selectedPromptId) defaultPromptDiv.classList.add('selected');
-        defaultPromptDiv.innerHTML = `<div class="prompt-info"><span class="prompt-display-name">پرامپت پیش‌فرض</span><span class="prompt-type-name">(توصیه شده - غیرقابل ویرایش)</span></div>`;
+        defaultPromptDiv.innerHTML = `<div class="prompt-info"><span class="prompt-display-name">پرامپت پیش‌فرض زیرنویس انگلیسی</span><span class="prompt-type-name">(توصیه شده - غیرقابل ویرایش)</span></div>`;
         defaultPromptDiv.addEventListener('click', () => selectPrompt('default'));
         promptListDiv.appendChild(defaultPromptDiv);
 
