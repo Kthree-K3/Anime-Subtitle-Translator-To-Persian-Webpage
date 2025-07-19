@@ -574,3 +574,14 @@ hr.footer-hr {
 .button-group {
     margin-top: 0; /* حذف فاصله اضافی بالای دکمه */
 }
+
+/* === NEW STYLES FOR SECTION HEADER WITH TOOLTIP === */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.section-header h2 {
+    margin-bottom: 0; /* Override default h2 margin */
+}
