@@ -276,7 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fileNameDisplay.innerHTML = `فایل انتخاب شده:<br><span class="filename-text">${fullFilename}</span>`; // Use innerHTML
             checkFormValidity();
         } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
-            fileNameDisplay.textContent = `در حال تحلیل فایل ویدیویی: ${file.name}...`;
+            fileNameDisplay.innerHTML = `در حال تحلیل فایل ویدیویی:<br><span class="filename-text">${file.name}</span>`;
             translateBtn.disabled = true;
 
             try {
