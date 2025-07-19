@@ -272,6 +272,9 @@ footer {
 .model-api-name, .prompt-type-name {
     font-size: 0.85rem;
     color: var(--subtle-text-color);
+}
+
+.model-api-name {
     font-family: monospace;
 }
 
