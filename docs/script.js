@@ -24,6 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadBtn = document.getElementById('download-btn');
     const errorDisplay = document.getElementById('error-display');
     const errorMessage = document.getElementById('error-message');
+    // New elements
+    const stopTranslationBtn = document.getElementById('stop-translation-btn');
+    const translationStatusMessage = document.getElementById('translation-status-message');
+
 
     // --- 2. ثابت‌ها و متغیرهای اصلی ---
    const DEFAULT_PROMPT = `پرامپت پیشرفته و یکپارچه برای ترجمه حرفه‌ای زیرنویس انیمه (فرمت 'میکرو دی وی دی') 
@@ -97,6 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedModelApiName = '';
     let prompts = [];
     let selectedPromptId = 'default';
+
+    // New variables for stopping translation and completeness check
+    let abortController = null; // For cancelling fetch requests
+    let originalLastEndFrame = 0; // To store the end frame of the last original subtitle entry
 
     // --- 3. توابع تبدیل فرمت (بدون تغییر) ---
     function timeToFrames(time, fps) {
@@ -302,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return (await response.json()).file.uri;
     }
     
-    async function getTranslationStream(fileUri, onChunk, onEnd, onError) {
+    async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSignal) {
         progressTitle.textContent = "مرحله ۳ از ۴: ارسال درخواست به هوش مصنوعی...";
         const apiKey = apiKeyInput.value.trim();
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModelApiName}:streamGenerateContent?alt=sse&key=${apiKey}`;
@@ -315,7 +323,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: activePrompt }, { fileData: { mime_type: "text/plain", file_uri: fileUri } }] }],
                     generationConfig: { temperature: parseFloat(tempSlider.value), topP: parseFloat(topPSlider.value) }
-                })
+                }),
+                signal: abortSignal // Pass the abort signal here
             });
 
             if (!response.ok) throw new Error(await handleFetchError(response));
@@ -348,7 +357,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             onEnd(fullText);
 
-        } catch(error) { onError(error); }
+        } catch(error) { 
+            // Handle AbortError specifically
+            if (error.name === 'AbortError') {
+                console.log('Fetch aborted by user.');
+                throw error; // Re-throw to be caught by the main translateBtn catch block
+            }
+            onError(error); 
+        }
+    }
+
+    // New helper function for completeness check
+    function checkTranslationCompleteness(translatedMicroDVD, originalLastEndFrame) {
+        const lines = translatedMicroDVD.split('\n');
+        const lineRegex = /\{(\d+)\}\{(\d+)\}(.*)/;
+        
+        // Iterate backwards to find the last valid MicroDVD line
+        for (let i = lines.length - 1; i >= 0; i--) {
+            const line = lines[i].trim();
+            const match = line.match(lineRegex);
+            if (match) {
+                const translatedEndFrame = parseInt(match[2], 10);
+                // Compare with originalLastEndFrame
+                return translatedEndFrame === originalLastEndFrame;
+            }
+        }
+        // If no valid MicroDVD line was found in the translated content
+        return false; 
     }
     
     // --- 5. اتصال Event Listener ها و اجرای اصلی ---
@@ -378,14 +413,25 @@ document.addEventListener('DOMContentLoaded', () => {
     translateBtn.addEventListener('click', async () => {
         if (!uploadedFile || !apiKeyInput.value.trim()) return;
 
-        progressSection.classList.remove('hidden');
+        // Reset UI state for new translation
+        progressSection.classList.remove('hidden'); // Make sure progress section is visible from the start
         downloadBtn.classList.add('hidden');
         errorDisplay.classList.add('hidden');
+        translationStatusMessage.classList.add('hidden'); // Hide status message at start of new translation
+        stopTranslationBtn.classList.remove('hidden'); // Show stop button
+        stopTranslationBtn.disabled = false; // Enable stop button
         translateBtn.disabled = true;
         progressBarFill.style.width = '0%';
         progressText.textContent = '۰٪';
         liveOutput.textContent = 'در حال انجام مرحلهٔ تفکر هوش مصنوعی هستیم. این فرایند ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید...';
         progressTitle.textContent = 'مرحله ۱ از ۴: تبدیل SRT به MicroDVD...';
+
+        // Clear any previous status classes
+        translationStatusMessage.classList.remove('status-complete', 'status-incomplete', 'status-aborted');
+
+        // Initialize abort controller for this translation session
+        abortController = new AbortController();
+        const signal = abortController.signal;
         
         try {
             const fileContent = await uploadedFile.text();
@@ -394,11 +440,22 @@ document.addEventListener('DOMContentLoaded', () => {
             
             originalMicroDVDLines = microDVDContent.split('\n').length;
             
+            // Extract the last end frame from the original MicroDVD content
+            const microDVDLines = microDVDContent.split('\n');
+            const lastOriginalLine = microDVDLines[microDVDLines.length - 1];
+            const originalLineMatch = lastOriginalLine.match(/\{(\d+)\}\{(\d+)\}(.*)/);
+            if (originalLineMatch) {
+                originalLastEndFrame = parseInt(originalLineMatch[2], 10);
+            } else {
+                originalLastEndFrame = 0; // Fallback if last line doesn't match
+            }
+
             const fileUri = await uploadFileToGemini(microDVDContent, uploadedFile.name.replace('.srt', '.txt'), apiKeyInput.value.trim());
 
             const onChunkReceived = (currentFullText) => {
                 const translatedLines = currentFullText.split('\n').map(line => {
                     const match = line.match(/\{(\d+)\}\{(\d+)\}(.*)/);
+                    // Only display the text part, clean up pipe symbols for live view
                     return match ? match[3].replace(/\|/g, ' ') : '';
                 });
                 liveOutput.textContent = translatedLines.join('\n');
@@ -414,20 +471,61 @@ document.addEventListener('DOMContentLoaded', () => {
                 progressBarFill.style.width = '100%';
                 progressText.textContent = '۱۰۰٪';
                 translatedMicroDVDContent = finalText;
+
+                // Perform completeness check
+                const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
+                translationStatusMessage.classList.remove('hidden');
+                translationStatusMessage.classList.remove('status-incomplete', 'status-aborted'); // Ensure clean state
+                if (isComplete) {
+                    translationStatusMessage.classList.add('status-complete');
+                    translationStatusMessage.innerHTML = '✔️ ترجمه کامل است.';
+                } else {
+                    translationStatusMessage.classList.add('status-incomplete');
+                    translationStatusMessage.innerHTML = '⚠️ ترجمه ممکن است ناقص باشد.';
+                }
+
                 downloadBtn.classList.remove('hidden');
                 translateBtn.disabled = false;
+                stopTranslationBtn.classList.add('hidden'); // Hide stop button
             };
             
             const onStreamError = (error) => { throw error; };
 
-            await getTranslationStream(fileUri, onChunkReceived, onStreamEnd, onStreamError);
+            await getTranslationStream(fileUri, onChunkReceived, onStreamEnd, onStreamError, signal); // Pass the signal
 
         } catch (error) {
             console.error(error);
-            errorMessage.textContent = error.message;
-            errorDisplay.classList.remove('hidden');
-            progressSection.classList.add('hidden');
             translateBtn.disabled = false;
+            stopTranslationBtn.classList.add('hidden'); // Hide stop button
+            downloadBtn.classList.add('hidden'); // Hide download button on error/abort initially
+
+            // Update progress section for error state
+            progressTitle.textContent = 'خطا در ترجمه!';
+            progressBarFill.style.width = '0%';
+            progressText.textContent = '۰٪';
+            liveOutput.textContent = ''; // Clear live output to show only error related messages
+
+            // Show and style status message for error/abort
+            translationStatusMessage.classList.remove('hidden', 'status-complete');
+            translationStatusMessage.classList.add('status-incomplete', 'status-aborted');
+
+            if (error.name === 'AbortError') {
+                errorMessage.textContent = 'عملیات ترجمه توسط کاربر متوقف شد.';
+                translationStatusMessage.innerHTML = '❌ ترجمه توسط کاربر متوقف شد.';
+            } else {
+                errorMessage.textContent = error.message || 'خطایی نامشخص رخ داد.';
+                translationStatusMessage.innerHTML = '❌ خطایی در ترجمه رخ داد.'; // Generic error message for UI status
+            }
+            errorDisplay.classList.remove('hidden'); // Still show the detailed error below
+        }
+    });
+
+    stopTranslationBtn.addEventListener('click', () => {
+        if (abortController) {
+            abortController.abort();
+            stopTranslationBtn.disabled = true; // Disable itself immediately
+            progressTitle.textContent = 'در حال توقف...';
+            // The catch block in translate-btn listener will handle UI reset
         }
     });
 
