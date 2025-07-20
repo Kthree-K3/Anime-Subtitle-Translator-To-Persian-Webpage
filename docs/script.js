@@ -286,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
             // --- START: Added mobile browser check ---
             if (isMobile() && !isFirefox()) {
-                alert("برای استخراج زیرنویس از فایل‌های ویدیویی روی موبایل، استفاده از مرورگر فایرفاکس برای عملکرد بهتر توصیه می‌شود.");
+                alert("برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4) در موبایل، توصیه می‌شود از مرورگر فایرفاکس استفاده کنید؛ چرا که سایر مرورگرها ممکن است از این قابلیت پشتیبانی نکنند.");
             }
             // --- END: Added mobile browser check ---
 
@@ -660,7 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMobile()) {
         const uploadTooltip = document.querySelector('#upload-section .help-tooltip-text');
         if (uploadTooltip) {
-            uploadTooltip.innerHTML += '<br><br><b>نکته برای کاربران موبایل:</b> برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4)، توصیه می‌شود از مرورگر فایرفاکس استفاده کنید.';
+            uploadTooltip.innerHTML += '<br><br><b>نکته برای کاربران موبایل:</b> برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4)، توصیه می‌شود از مرورگر فایرفاکس استفاده کنید؛ چرا که سایر مرورگرها ممکن است از این قابلیت پشتیبانی نکنند';
         }
     }
     // --- END: Add mobile-specific tooltip text ---
