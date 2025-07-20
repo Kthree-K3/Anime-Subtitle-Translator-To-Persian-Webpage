@@ -487,7 +487,12 @@ document.addEventListener('DOMContentLoaded', () => {
             let outputFileNameBase = '';
 
             // --- Pre-processing logic ---
-            if (uploadedFile.type) { // It's an extracted stream from a video file
+            // BUG FIX: The original check `if (uploadedFile.type)` was unreliable because a direct file 
+            // upload also has a `type` property (its MIME type), causing mobile browsers to incorrectly 
+            // enter this block for SRT files.
+            // The new check `uploadedFile.streamIndex !== undefined` is robust because `streamIndex` is
+            // a custom property ONLY added to our object for video-extracted subtitles.
+            if (uploadedFile.streamIndex !== undefined) { // It's an extracted stream from a video file
                 const videoFile = uploadedFile.file;
                 outputFileNameBase = videoFile.name.substring(0, videoFile.name.lastIndexOf('.'));
                 progressTitle.textContent = `مرحله ۱ از ۴: استخراج زیرنویس از فایل ویدیویی...`;
@@ -609,7 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalSrtContent = convertMicroDVDtoSrt(translatedMicroDVDContent);
         
         let originalFilename;
-        if (uploadedFile.type) { // From video file
+        // BUG FIX: Same as the fix in the translate button handler. Using the robust `streamIndex` check.
+        if (uploadedFile.streamIndex !== undefined) { // From video file
             originalFilename = uploadedFile.file.name;
         } else { // Direct upload
             originalFilename = uploadedFile.name;
