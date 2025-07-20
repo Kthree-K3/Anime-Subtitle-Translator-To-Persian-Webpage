@@ -496,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
         translateBtn.disabled = true;
         progressBarFill.style.width = '0%';
         progressText.textContent = '۰٪';
-        liveOutput.textContent = 'در حال آماده سازی برای ورود به مرحلهٔ تفکر هوش مصنوعی هستیم. اتمام فرایند مرحلهٔ تفکر ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید...';
+        liveOutput.textContent = 'در حال آماده سازی برای ورود به مرحلهٔ تفکر هوش مصنوعی هستیم. تا اتمام فرایند مرحلهٔ تفکر ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید...';
         progressTitle.textContent = 'مرحله ۱ از ۴: پردازش فایل ورودی...';
         translationStatusMessage.classList.remove('status-complete', 'status-incomplete', 'status-aborted');
         abortController = new AbortController();
