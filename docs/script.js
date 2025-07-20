@@ -108,7 +108,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let ffprobeWorker = null;
     let ffmpegWorker = null;
+  
+    // --- Mobile/Browser Detection Helpers ---
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
 
+    function isFirefox() {
+        return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    }
 
     // --- 3. توابع تبدیل فرمت ---
     function timeToFrames(time, fps) {
@@ -257,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); apiKeyInput.value = ''; loadModels(); loadPrompts(); checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
     
     function checkFormValidity() { translateBtn.disabled = !(uploadedFile && apiKeyInput.value.trim() !== ''); }
-       async function handleFileSelect(file) {
+             async function handleFileSelect(file) {
         uploadedFile = null;
         fileNameDisplay.innerHTML = ''; // Changed from textContent
         errorDisplay.classList.add('hidden');
@@ -276,6 +284,12 @@ document.addEventListener('DOMContentLoaded', () => {
             fileNameDisplay.innerHTML = `فایل انتخاب شده:<br><span class="filename-text">${fullFilename}</span>`; // Use innerHTML
             checkFormValidity();
         } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
+            // --- START: Added mobile browser check ---
+            if (isMobile() && !isFirefox()) {
+                alert("برای استخراج زیرنویس از فایل‌های ویدیویی روی موبایل، استفاده از مرورگر فایرفاکس برای عملکرد بهتر توصیه می‌شود.");
+            }
+            // --- END: Added mobile browser check ---
+
             fileNameDisplay.innerHTML = `در حال تحلیل فایل ویدیویی:<br><span class="filename-text">${file.name}</span>`;
             translateBtn.disabled = true;
 
@@ -329,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             alert('فرمت فایل پشتیبانی نمی‌شود. لطفاً یک فایل با فرمت .srt, .ass, .mkv, .mp4 انتخاب کنید.');
         }
-       }
+             }
     async function handleFetchError(response) { const errorText = await response.text(); try { return JSON.parse(errorText).error?.message || errorText; } catch (e) { return errorText; } }
 
     function runFFprobeCommand(file, args) {
@@ -637,8 +651,17 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
     });
 
-    // بارگذاری اولیه
+       // بارگذاری اولیه
     loadModels();
     loadPrompts();
     checkFormValidity();
+
+    // --- START: Add mobile-specific tooltip text ---
+    if (isMobile()) {
+        const uploadTooltip = document.querySelector('#upload-section .help-tooltip-text');
+        if (uploadTooltip) {
+            uploadTooltip.innerHTML += '<br><br><b>نکته برای کاربران موبایل:</b> برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4)، توصیه می‌شود از مرورگر فایرفاکس استفاده کنید.';
+        }
+    }
+    // --- END: Add mobile-specific tooltip text ---
 });
