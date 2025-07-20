@@ -1,10 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-
+ 
     // --- Helper functions for device detection (MUST be defined first) ---
     const isMobile = () => /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    const isChromeOnMobile = () => isMobile() && /Chrome/i.test(navigator.userAgent) && !/Firefox|Edg/i.test(navigator.userAgent);
-
-    // --- Dynamic Tooltip Update for Mobile ---
+    const isChromeOnMobile = () => isMobile() && /Chrome/i.test(navigator.userAgent) && !/Firefox|Edg/i.test(navigator.userAgent)
+        // --- Dynamic Tooltip Update for Mobile ---
     if (isMobile()) {
         const uploadTooltip = document.getElementById('upload-tooltip-text');
         if (uploadTooltip) {
@@ -15,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
     }
-
     // --- 1. انتخاب عناصر HTML ---
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
@@ -160,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const milliseconds = Math.round((totalSeconds - Math.floor(totalSeconds)) * 1000);
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')},${milliseconds.toString().padStart(3, '0')}`;
     }
-    function convertMicroDVDtoSrt(microDVDContent, fps = 23.976) {
+       function convertMicroDVDtoSrt(microDVDContent, fps = 23.976) {
         const lines = microDVDContent.split('\n');
         let srt = '';
         let index = 1;
@@ -173,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let text = match[3];
                 const startTime = framesToSrtTime(startFrame, fps);
                 const endTime = framesToSrtTime(endFrame, fps);
-                
+
                 const rtlFixedText = text.replace(/\|/g, '\r\n').split('\r\n').map(line => `\u202B${line.trim()}\u202C`).join('\r\n');
                 
                 srt += `${index}\r\n${startTime} --> ${endTime}\r\n${rtlFixedText}\r\n\r\n`;
@@ -181,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         return srt;
-    }
+       }
 
     function cleanAssToSrt(assContent) {
         const assDialoguePattern = /^Dialogue:\s*\d+,(\d+:\d{2}:\d{2}\.\d{2}),(\d+:\d{2}:\d{2}\.\d{2}),[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,([\s\S]*)$/;
@@ -273,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); apiKeyInput.value = ''; loadModels(); loadPrompts(); checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
     
     function checkFormValidity() { translateBtn.disabled = !(uploadedFile && apiKeyInput.value.trim() !== ''); }
-    async function handleFileSelect(file) {
+         async function handleFileSelect(file) {
         uploadedFile = null;
         fileNameDisplay.innerHTML = '';
         errorDisplay.classList.add('hidden');
@@ -293,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
             checkFormValidity();
         } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
             
+            // --- NEW: Mobile Chrome Warning ---
             if (isChromeOnMobile()) {
                 alert("توجه: شما در حال استفاده از مرورگر کروم روی موبایل هستید.\n\nپردازش فایل‌های ویدیویی در این مرورگر ممکن است بسیار کند باشد یا متوقف شود. برای بهترین نتیجه، استفاده از مرورگر Firefox توصیه می‌شود.\n\n(این فقط یک هشدار است و فرآیند ادامه خواهد یافت)");
             }
@@ -350,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             alert('فرمت فایل پشتیبانی نمی‌شود. لطفاً یک فایل با فرمت .srt, .ass, .mkv, .mp4 انتخاب کنید.');
         }
-    }
+         }
     async function handleFetchError(response) { const errorText = await response.text(); try { return JSON.parse(errorText).error?.message || errorText; } catch (e) { return errorText; } }
 
     function runFFprobeCommand(file, args) {
