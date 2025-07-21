@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
             // --- START: Added mobile browser check ---
             if (isMobile() && !isFirefox()) {
-                alert("برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4) در موبایل، توصیه می‌شود از Firefox استفاده کنید؛ چرا که سایر مرورگرها ممکن است از این قابلیت پشتیبانی نکنند.");
+                alert("برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4) در موبایل، توصیه می‌شود از مرورگر Firefox استفاده کنید؛ چرا که سایر مرورگرها ممکن است از این قابلیت پشتیبانی نکنند.");
             }
             // --- END: Added mobile browser check ---
 
