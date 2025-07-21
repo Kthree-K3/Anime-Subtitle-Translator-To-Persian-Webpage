@@ -108,6 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let ffprobeWorker = null;
     let ffmpegWorker = null;
+
+    // START: Variable for the thinking-phase timer
+    let thinkingPhaseTimer = null;
+    // END: Variable for the thinking-phase timer
   
     // --- Mobile/Browser Detection Helpers ---
     function isMobile() {
@@ -214,6 +218,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- 4. توابع مدیریت برنامه ---
+
+    function updateProgress(percentage, title) {
+        const p = Math.min(100, Math.max(0, percentage));
+        if (title) {
+            progressTitle.textContent = title;
+        }
+        progressBarFill.style.width = `${p}%`;
+        progressText.textContent = `${Math.round(p)}٪`;
+    }
 
     function renderModels() {
         modelListDiv.innerHTML = '';
@@ -328,7 +341,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     file: file,
                     streamIndex: selectedStream.index,
                     type: selectedStream.codec_name,
-                    name: `${file.name.substring(0, file.name.lastIndexOf('.'))}.track${selectedStream.index}.${selectedStream.codec_name}`
+                    name: `${file.name.substring(0, file.name.lastIndexOf('.'))}.track${selectedStream.index}.${selectedStream.codec_name}`,
+                    duration: parseFloat(parsedResult.format?.duration || 0)
                 };
                 const trackInfo = `[${selectedStream.tags?.language || 'unk'}] (فرمت: ${selectedStream.codec_name})`;
                 fileNameDisplay.innerHTML = `ترک انتخاب شده:<br><span class="filename-text">${trackInfo}</span>`; // Use innerHTML
@@ -363,7 +377,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-    function runFFmpegCommand(file, args) {
+    
+    function runFFmpegCommand(file, args, duration, onProgress) {
         return new Promise((resolve, reject) => {
             if (ffmpegWorker) ffmpegWorker.terminate();
             ffmpegWorker = new Worker('./ffmpeg-worker-mkve.js');
@@ -374,26 +389,75 @@ document.addEventListener('DOMContentLoaded', () => {
                 switch (msg.type) {
                     case 'ready': ffmpegWorker.postMessage({ type: 'run', arguments: args, mounts: [{ type: 'WORKERFS', opts: { files: [file] }, mountpoint: '/data' }] }); break;
                     case 'stdout': stdout += msg.data + '\n'; break;
-                    case 'stderr': stderr += msg.data + '\n'; break;
-                    case 'done': ffmpegWorker.terminate(); ffmpegWorker = null; resolve({ stdout, stderr, files: msg.data.MEMFS }); break;
-                    case 'error': ffmpegWorker.terminate(); ffmpegWorker = null; reject(new Error(msg.data)); break;
+                    case 'stderr': 
+                        stderr += msg.data + '\n';
+                        if (duration > 0 && typeof onProgress === 'function') {
+                            const timeMatch = msg.data.match(/time=(\d{2}):(\d{2}):(\d{2})\.(\d{2})/);
+                            if (timeMatch) {
+                                const hours = parseInt(timeMatch[1], 10);
+                                const minutes = parseInt(timeMatch[2], 10);
+                                const seconds = parseInt(timeMatch[3], 10);
+                                const centiseconds = parseInt(timeMatch[4], 10);
+                                const currentTime = (hours * 3600) + (minutes * 60) + seconds + (centiseconds / 100);
+                                const percentage = (currentTime / duration) * 100;
+                                onProgress(percentage);
+                            }
+                        }
+                        break;
+                    case 'done': 
+                        if(typeof onProgress === 'function') onProgress(100);
+                        ffmpegWorker.terminate(); 
+                        ffmpegWorker = null; 
+                        resolve({ stdout, stderr, files: msg.data.MEMFS }); 
+                        break;
+                    case 'error': 
+                        ffmpegWorker.terminate(); 
+                        ffmpegWorker = null; 
+                        reject(new Error(msg.data)); 
+                        break;
                 }
             });
         });
     }
 
-    async function uploadFileToGemini(processedText, originalFilename, apiKey) {
-        progressTitle.textContent = "مرحله ۲ از ۴: آپلود فایل به سرور گوگل...";
-        const formData = new FormData();
-        const fileToUpload = new File([processedText], originalFilename, { type: 'text/plain' });
-        formData.append('file', fileToUpload);
-        const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
-        const response = await fetch(url, { method: 'POST', body: formData });
-        if (!response.ok) throw new Error(`خطا در آپلود فایل: ${await handleFetchError(response)}`);
-        return (await response.json()).file.uri;
+    function uploadFileToGemini(processedText, originalFilename, apiKey, onProgress) {
+        return new Promise((resolve, reject) => {
+            progressTitle.textContent = "مرحله ۲ از ۴: آپلود فایل به سرور گوگل...";
+            const formData = new FormData();
+            const fileToUpload = new File([processedText], originalFilename, { type: 'text/plain' });
+            formData.append('file', fileToUpload);
+            const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url, true);
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable && typeof onProgress === 'function') {
+                    const percentage = (event.loaded / event.total) * 100;
+                    onProgress(percentage);
+                }
+            };
+            
+            xhr.onload = async () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    if(typeof onProgress === 'function') onProgress(100);
+                    resolve(JSON.parse(xhr.responseText).file.uri);
+                } else {
+                    const errorMsg = await handleFetchError({ text: () => Promise.resolve(xhr.responseText) });
+                    reject(new Error(`خطا در آپلود فایل: ${errorMsg}`));
+                }
+            };
+            
+            xhr.onerror = () => {
+                reject(new Error('خطای شبکه هنگام آپلود فایل رخ داد.'));
+            };
+            
+            xhr.send(formData);
+        });
     }
+
     async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSignal) {
-        progressTitle.textContent = "مرحله ۳ از ۴: ارسال درخواست به هوش مصنوعی...";
+        // This function no longer sets the title. It just performs the request.
         const apiKey = apiKeyInput.value.trim();
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModelApiName}:streamGenerateContent?alt=sse&key=${apiKey}`;
         try {
@@ -408,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 signal: abortSignal
             });
             if (!response.ok) throw new Error(await handleFetchError(response));
-            progressTitle.textContent = "مرحله ۴ از ۴: در حال دریافت ترجمه...";
+            
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let fullText = '';
@@ -488,39 +552,42 @@ document.addEventListener('DOMContentLoaded', () => {
         stopTranslationBtn.classList.remove('hidden');
         stopTranslationBtn.disabled = false;
         translateBtn.disabled = true;
-        progressBarFill.style.width = '0%';
-        progressText.textContent = '۰٪';
-        liveOutput.textContent = 'در حال آماده سازی برای ورود به مرحلهٔ تفکر هوش مصنوعی هستیم. اتمام فرایند مرحلهٔ تفکر ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید...';
-        progressTitle.textContent = 'مرحله ۱ از ۴: پردازش فایل ورودی...';
+        liveOutput.textContent = 'در حال آماده سازی...';
         translationStatusMessage.classList.remove('status-complete', 'status-incomplete', 'status-aborted');
         abortController = new AbortController();
         const signal = abortController.signal;
+
+        // START: Clear any previous thinking timer
+        clearInterval(thinkingPhaseTimer);
+        thinkingPhaseTimer = null;
+        // END: Clear timer
         
         try {
             let cleanSrtContent = '';
             let outputFileNameBase = '';
+            
+            updateProgress(0, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
 
-            // --- Pre-processing logic ---
-            // BUG FIX: The original check `if (uploadedFile.type)` was unreliable because a direct file 
-            // upload also has a `type` property (its MIME type), causing mobile browsers to incorrectly 
-            // enter this block for SRT files.
-            // The new check `uploadedFile.streamIndex !== undefined` is robust because `streamIndex` is
-            // a custom property ONLY added to our object for video-extracted subtitles.
-            if (uploadedFile.streamIndex !== undefined) { // It's an extracted stream from a video file
+            if (uploadedFile.streamIndex !== undefined) { 
                 const videoFile = uploadedFile.file;
                 outputFileNameBase = videoFile.name.substring(0, videoFile.name.lastIndexOf('.'));
-                progressTitle.textContent = `مرحله ۱ از ۴: استخراج زیرنویس از فایل ویدیویی...`;
                 
-                // --- FINAL CORRECTED FFMPEG COMMAND LOGIC ---
+                const onFfmpegProgress = (p) => {
+                    updateProgress(p, 'مرحله ۱ از ۴: استخراج زیرنویس از فایل ویدیویی...');
+                };
+
                 const outputFormat = uploadedFile.type === 'subrip' ? 'srt' : 'ass';
                 const outputFilename = `output.${outputFormat}`;
-
-                const ffmpegResult = await runFFmpegCommand(videoFile, [
-                    '-i', '/data/' + videoFile.name,
-                    '-map', `0:${uploadedFile.streamIndex}`,
-                    '-codec', 'copy',
-                    outputFilename
-                ]);
+                const ffmpegResult = await runFFmpegCommand(videoFile, 
+                    [
+                        '-i', '/data/' + videoFile.name,
+                        '-map', `0:${uploadedFile.streamIndex}`,
+                        '-codec', 'copy',
+                        outputFilename
+                    ], 
+                    uploadedFile.duration, 
+                    onFfmpegProgress
+                );
 
                 if (!ffmpegResult.files || ffmpegResult.files.length === 0) {
                     throw new Error(`استخراج زیرنویس از فایل ویدیویی ناموفق بود. خطای داخلی FFmpeg:\n${ffmpegResult.stderr}`);
@@ -529,24 +596,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rawSubtitleContent = await new Response(ffmpegResult.files[0].data).text();
                 
                 if (outputFormat === 'ass') {
-                    progressTitle.textContent = `مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...`;
+                    updateProgress(100, 'مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...');
                     cleanSrtContent = cleanAssToSrt(rawSubtitleContent);
-                } else { // It's SRT, use it directly
+                } else {
                     cleanSrtContent = rawSubtitleContent;
                 }
 
-            } else { // It's a direct file upload
+            } else { 
                 outputFileNameBase = uploadedFile.name.substring(0, uploadedFile.name.lastIndexOf('.'));
                 const fileContent = await uploadedFile.text();
                 if (uploadedFile.name.toLowerCase().endsWith('.ass')) {
-                    progressTitle.textContent = `مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...`;
+                    updateProgress(50, 'مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...');
                     cleanSrtContent = cleanAssToSrt(fileContent);
-                } else { // Assume SRT
+                } else { 
                     cleanSrtContent = fileContent;
                 }
+                updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
             }
-            // --- End of Pre-processing ---
-
+            
             if (!cleanSrtContent || cleanSrtContent.trim() === '') {
                  throw new Error("فایل زیرنویس پس از پردازش خالی است. ممکن است فرمت داخلی آن پشتیبانی نشود.");
             }
@@ -559,21 +626,50 @@ document.addEventListener('DOMContentLoaded', () => {
             const lastOriginalLine = microDVDLines[microDVDLines.length - 1] || '';
             const originalLineMatch = lastOriginalLine.match(/\{(\d+)\}\{(\d+)\}(.*)/);
             originalLastEndFrame = originalLineMatch ? parseInt(originalLineMatch[2], 10) : 0;
+            
+            liveOutput.textContent = 'فایل پردازش شد. در حال آماده‌سازی برای آپلود...';
 
-            const fileUri = await uploadFileToGemini(microDVDContent, outputFileNameBase + '.txt', apiKeyInput.value.trim());
+            // --- Stage 2: Upload ---
+            updateProgress(0, 'مرحله ۲ از ۴: آپلود فایل به سرور گوگل...');
+            const onUploadProgress = (p) => {
+                 updateProgress(p, 'مرحله ۲ از ۴: آپلود فایل زیرنویس به سرور گوگل...');
+            };
+            const fileUri = await uploadFileToGemini(microDVDContent, outputFileNameBase + '.txt', apiKeyInput.value.trim(), onUploadProgress);
+            
+            // --- START: Thinking Phase with Timer ---
+            const thinkingStartTime = Date.now();
+            const baseThinkingText = 'مرحلهٔ تفکر هوش‌مصنوعی، اتمام فرایند ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید: ';
+            liveOutput.textContent = baseThinkingText + '0.0 s';
+            updateProgress(0, 'مرحله ۳ از ۴: هوش مصنوعی در حال تفکر است...');
 
+            thinkingPhaseTimer = setInterval(() => {
+                const elapsedTime = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
+                liveOutput.textContent = baseThinkingText + `${elapsedTime} ثانیه`;
+            }, 100);
+            // --- END: Thinking Phase with Timer ---
+            
+            // --- Stage 3 & 4: Get Translation Stream ---
+            let isFirstChunk = true;
             const onChunkReceived = (currentFullText) => {
+                // START: Stop the thinking timer on first chunk
+                if (isFirstChunk) {
+                    clearInterval(thinkingPhaseTimer);
+                    thinkingPhaseTimer = null;
+                    isFirstChunk = false;
+                    // Now, start the real progress for streaming
+                    updateProgress(0, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
+                }
+                // END: Stop timer
+
                 const translatedLines = currentFullText.split('\n');
                 liveOutput.textContent = translatedLines.map(line => (line.match(/\{(\d+)\}\{(\d+)\}(.*)/) || [])[3] || '').join('\n').replace(/\|/g, ' ');
                 liveOutput.scrollTop = liveOutput.scrollHeight;
                 const percentage = Math.min(99, Math.round((translatedLines.length / originalMicroDVDLines) * 100));
-                progressBarFill.style.width = `${percentage}%`;
-                progressText.textContent = `${percentage}٪`;
+                updateProgress(percentage, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
             };
             const onStreamEnd = (finalText) => {
-                progressTitle.textContent = "ترجمه با موفقیت انجام شد!";
-                progressBarFill.style.width = '100%';
-                progressText.textContent = '۱۰۰٪';
+                clearInterval(thinkingPhaseTimer); // Ensure it's cleared if stream ends
+                updateProgress(100, "ترجمه با موفقیت انجام شد!");
                 translatedMicroDVDContent = finalText;
                 const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
                 translationStatusMessage.classList.remove('hidden', 'status-incomplete', 'status-aborted');
@@ -593,6 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await getTranslationStream(fileUri, onChunkReceived, onStreamEnd, onStreamError, signal);
 
         } catch (error) {
+            clearInterval(thinkingPhaseTimer); // Crucial: clear timer on any error
             console.error(error);
             translateBtn.disabled = false;
             stopTranslationBtn.classList.add('hidden');
@@ -628,10 +725,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalSrtContent = convertMicroDVDtoSrt(translatedMicroDVDContent);
         
         let originalFilename;
-        // BUG FIX: Same as the fix in the translate button handler. Using the robust `streamIndex` check.
-        if (uploadedFile.streamIndex !== undefined) { // From video file
+        if (uploadedFile.streamIndex !== undefined) {
             originalFilename = uploadedFile.file.name;
-        } else { // Direct upload
+        } else {
             originalFilename = uploadedFile.name;
         }
         
