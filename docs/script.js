@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             // --- END: Added mobile browser check ---
 
-            fileNameDisplay.innerHTML = 'در حال تحلیل فایل ویدیوی<br>لطفاً صبر کنید<br><span class="filename-text">${file.name}</span>`;
+            fileNameDisplay.innerHTML = `در حال تحلیل فایل ویدیویی:<br><span class="filename-text">${file.name}</span>`;
             translateBtn.disabled = true;
 
             try {
