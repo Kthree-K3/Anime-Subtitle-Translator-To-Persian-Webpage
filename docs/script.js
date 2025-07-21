@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!file) return;
 
         const fileName = file.name.toLowerCase();
-        const supportedVideoFormats = ['.mkv', '.mp4', '.avi', '.mov'];
+        const supportedVideoFormats = ['.mkv', '.mp4'];
         const supportedSubtitleFormats = ['.srt', '.ass'];
 
         if (supportedSubtitleFormats.some(ext => fileName.endsWith(ext))) {
