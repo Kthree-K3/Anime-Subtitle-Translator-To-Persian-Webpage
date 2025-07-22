@@ -301,9 +301,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isMobile() && !isFirefox()) {
                 alert("برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4) در موبایل، توصیه می‌شود از مرورگر Firefox استفاده کنید؛ چرا که سایر مرورگرها ممکن است از این قابلیت پشتیبانی نکنند.");
             }
-            // --- END: Added mobile browser check ---
+             // --- END: Added mobile browser check ---
 
-            fileNameDisplay.innerHTML = `در حال تحلیل فایل ویدیویی<br>لطفاً صبر کنید<br><span class="filename-text">${file.name}</span>`;
+            fileNameDisplay.innerHTML = `لطفاً کمی صبر کنید:<br><span class="filename-text">${file.name}</span>`;
             translateBtn.disabled = true;
 
             try {
