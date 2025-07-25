@@ -180,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
        }
 
  
+
 function cleanAssToSrt(assContent) {
     const lines = assContent.split('\n');
     let srtOutput = '';
@@ -208,22 +209,24 @@ function cleanAssToSrt(assContent) {
     for (const line of lines) {
         // فقط خطوطی که با "Dialogue:" شروع می‌شوند را پردازش کن
         if (line.trim().startsWith('Dialogue:')) {
-            // به جای یک Regex شکننده، خط را با کاما جدا می‌کنیم
-            // 9 کامای اول را در نظر می‌گیریم، چون بقیه خط ممکن است خودش کاما داشته باشد
-            const parts = line.substring(9).split(',', 9);
+            // خط را با 9 کامای اول جدا می‌کنیم تا متن اصلی که ممکن است کاما داشته باشد، دست‌نخورده بماند
+            const parts = line.substring(line.indexOf(':') + 1).trim().split(',', 9);
 
-            // اطمینان از اینکه خط ساختار درستی دارد (حداقل 10 بخش)
-            if (parts.length < 9) {
+            // ### نقطه اصلاح شده و کلیدی ###
+            // یک خط دیالوگ استاندارد 10 بخش دارد (شامل متن).
+            // چک می‌کنیم که حتماً این تعداد بخش وجود داشته باشد.
+            if (parts.length < 10) {
                 continue; // اگر ساختار درست نبود، از این خط بگذر
             }
 
+            // بخش‌های مختلف را استخراج می‌کنیم
             const startTime = parts[1] ? parts[1].trim() : "0:00:00.00";
             const endTime = parts[2] ? parts[2].trim() : "0:00:00.00";
-            const textPart = parts[9] || ''; // متن اصلی، آخرین بخش است
+            // متن اصلی، همیشه آخرین بخش (ایندکس 9) است
+            const textPart = parts[9] || '';
 
             const cleanedText = cleanTextFromAss(textPart);
 
-            // << مرحله کلیدی >>
             // فقط در صورتی زیرنویس را اضافه کن که بعد از تمیزکاری، متنی باقی مانده باشد
             if (cleanedText) {
                 const srtStartTime = formatTimeToSrt(startTime);
