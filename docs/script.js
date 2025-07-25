@@ -920,6 +920,6 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     }
      // فراخوانی توابع برای نمایش آمار و شمارش بازدید
     displayStats();
-    incrementCounter(COUNTER_VISITS_SLUG);
+    incrementCounter("visitspages");
     // --- END: Add mobile-specific tooltip text ---
 });
