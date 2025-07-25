@@ -748,10 +748,10 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
 
 // ====================================================================================
-// <<<< کل این بلوک catch را در listener دکمه translate با کد نهایی زیر جایگزین کنید >>>>
+// <<<< قدم اول: این بلوک catch را در script.js جایگزین کنید >>>>
 // ====================================================================================
 } catch (error) {
-    clearInterval(thinkingPhaseTimer); // Crucial: clear timer on any error
+    clearInterval(thinkingPhaseTimer);
     console.error(error);
     translateBtn.disabled = false;
     stopTranslationBtn.classList.add('hidden');
@@ -763,7 +763,6 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     translationStatusMessage.classList.remove('hidden', 'status-complete');
     translationStatusMessage.classList.add('status-incomplete', 'status-aborted');
 
-    // <<< بخش مدیریت هوشمند خطاها با قابلیت تشخیص خطای Location >>>
     let userFriendlyMessage = '';
     const errorMessageText = error.message || 'خطایی نامشخص رخ داد.';
 
@@ -771,13 +770,10 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         userFriendlyMessage = 'عملیات ترجمه توسط کاربر متوقف شد.';
         translationStatusMessage.innerHTML = '❌ ترجمه توسط کاربر متوقف شد.';
     } else if (errorMessageText.toLowerCase().includes('overloaded') || errorMessageText.includes('503')) {
-        // اگر خطا مربوط به Overload بودن مدل بود
         userFriendlyMessage = `
             <b>خطای موقتی از سوی سرور گوگل: The model is overloaded.</b>
-            <br><br>
-            این خطا معمولاً به دلیل ترافیک بسیار بالای لحظه‌ای روی سرورهای گوگل رخ می‌دهد.
-            <br><br>
-            <b>راه حل پیشنهادی:</b>
+            <p>این خطا معمولاً به دلیل ترافیک بسیار بالای لحظه‌ای روی سرورهای گوگل رخ می‌دهد.</p>
+            <p><b>راه حل پیشنهادی:</b></p>
             <ol>
                 <li>چند دقیقه صبر کرده و دوباره امتحان کنید.</li>
                 <li>اگر مشکل تکرار شد، ممکن است به دلیل پیچیدگی خاص فایل شما باشد. لطفاً فایل زیرنویس را به صورت دستی (با نرم‌افزار Subtitle Edit) به فرمت <b>.srt</b> تبدیل کرده و سپس آن را در برنامه انتخاب کنید.</li>
@@ -785,23 +781,17 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         `;
         translationStatusMessage.innerHTML = '❌ خطای موقتی سرور.';
     } else if (errorMessageText.toLowerCase().includes('api key not valid')) {
-        // مدیریت خطای مربوط به کلید API
-         userFriendlyMessage = `
+        userFriendlyMessage = `
             <b>کلید API نامعتبر است.</b>
-            <br><br>
-            لطفاً مطمئن شوید که کلید API را به درستی از <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> کپی کرده و در کادر مربوطه وارد کرده‌اید.
-            <br><br>
-            همچنین به یاد داشته باشید که فیلترشکن شما باید در تمام مراحل روشن باشد.
+            <p>لطفاً مطمئن شوید که کلید API را به درستی از <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> کپی کرده و در کادر مربوطه وارد کرده‌اید.</p>
+            <p>همچنین به یاد داشته باشید که فیلترشکن شما باید در تمام مراحل روشن باشد.</p>
         `;
         translationStatusMessage.innerHTML = '❌ کلید API نامعتبر.';
     } else if (errorMessageText.toLowerCase().includes('location') || errorMessageText.toLowerCase().includes('permission denied')) {
-        // <<< شرط جدید برای خطای Location/تحریم >>>
-         userFriendlyMessage = `
+        userFriendlyMessage = `
             <b>خطا در دسترسی (مشکل تحریم یا فیلترشکن).</b>
-            <br><br>
-            این خطا به این معنی است که سرورهای گوگل به دلیل موقعیت جغرافیایی شما، اجازه دسترسی نمی‌دهند.
-            <br><br>
-            <b>راه حل پیشنهادی:</b>
+            <p>این خطا به این معنی است که سرورهای گوگل به دلیل موقعیت جغرافیایی شما، اجازه دسترسی نمی‌دهند.</p>
+            <p><b>راه حل پیشنهادی:</b></p>
             <ol>
                 <li>از روشن و فعال بودن <b>فیلترشکن قوی</b> خود اطمینان حاصل کنید.</li>
                 <li>اگر فیلترشکن شما روشن است اما همچنان این خطا را می‌بینید، ممکن است دچار "نشت آی‌پی" (IP Leak) شده باشد. لطفاً <b>فیلترشکن خود را تغییر دهید</b> یا از یک سرور دیگر در آن استفاده کنید.</li>
@@ -809,15 +799,11 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         `;
         translationStatusMessage.innerHTML = '❌ خطای دسترسی/فیلترشکن.';
     } else {
-        // برای سایر خطاها
-        userFriendlyMessage = `<b>یک خطای پیش‌بینی‌نشده رخ داد:</b><br><pre>${errorMessageText}</pre>`;
+        userFriendlyMessage = `<b>یک خطای پیش‌بینی‌نشده رخ داد:</b><pre>${errorMessageText}</pre>`;
         translationStatusMessage.innerHTML = '❌ خطایی در ترجمه رخ داد.';
     }
 
-    // اینجا به جای errorMessage.textContent از innerHTML استفاده می‌کنیم تا تگ‌های HTML نمایش داده شوند
     errorMessage.innerHTML = userFriendlyMessage;
-    // <<< پایان بخش جدید >>>
-
     errorDisplay.classList.remove('hidden');
         }
     });
