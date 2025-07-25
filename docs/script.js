@@ -245,7 +245,8 @@ function cleanAssToSrt(assContent) {
     // --- 4. توابع مدیریت برنامه ---
 
     
-// تابع ۱: افزایش شمارنده
+
+// تابع ۱: افزایش شمارنده (با استفاده از پراکسی و مسیر کامل)
 async function incrementCounter(slug) {
     try {
         await fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/${slug}/up`, { method: 'POST' });
@@ -254,7 +255,7 @@ async function incrementCounter(slug) {
     }
 }
 
-// تابع ۲: دریافت و نمایش آمار
+// تابع ۲: دریافت و نمایش آمار (با استفاده از پراکسی و مسیر کامل)
 async function displayStats() {
     const visitsElement = document.getElementById('visits-counter');
     const downloadsElement = document.getElementById('downloads-counter');
@@ -875,7 +876,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
     downloadBtn.addEventListener('click', () => {
         if (!translatedMicroDVDContent) return;
-         incrementCounter(COUNTER_DOWNLOADS_SLUG);
+          incrementCounter('downloadfile');
         const finalSrtContent = convertMicroDVDtoSrt(translatedMicroDVDContent);
         
         let originalFilename;
@@ -915,6 +916,6 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     }
      // فراخوانی توابع برای نمایش آمار و شمارش بازدید
     displayStats();
-    incrementCounter(COUNTER_VISITS_SLUG);
+      incrementCounter('visitspages');
     // --- END: Add mobile-specific tooltip text ---
 });
