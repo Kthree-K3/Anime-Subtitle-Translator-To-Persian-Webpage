@@ -181,42 +181,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
  
 
- function cleanAssToSrt(assContent) {
-        const assDialoguePattern = /^Dialogue:\s*\d+,(\d+:\d{2}:\d{2}\.\d{2}),(\d+:\d{2}:\d{2}\.\d{2}),[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,([\s\S]*)$/;
-        const cleanTextFromAss = (text) => {
-            let cleaned = text.replace(/\{[^}]*\}/g, '');
-            cleaned = cleaned.replace(/\\N/g, '\n');
-            return cleaned;
-        };
-        const formatTimeToSrt = (assTime) => {
-            const parts = assTime.match(/(\d):(\d{2}):(\d{2})\.(\d{2})/);
-            if (!parts) return "00:00:00,000";
-            const h = parts[1].padStart(2, '0');
-            const m = parts[2];
-            const s = parts[3];
-            const ms = parseInt(parts[4], 10) * 10;
-            return `${h}:${m}:${s},${ms.toString().padStart(3, '0')}`;
-        };
 
-        let srtOutput = '';
-        let srtIndex = 1;
-        const lines = assContent.split('\n');
-        for (const line of lines) {
-            const match = line.trim().match(assDialoguePattern);
-            if (match) {
-                const srtStartTime = formatTimeToSrt(match[1]);
-                const srtEndTime = formatTimeToSrt(match[2]);
-                const cleanedText = cleanTextFromAss(match[3]).trim();
-                if (cleanedText) {
-                    srtOutput += `${srtIndex}\r\n`;
-                    srtOutput += `${srtStartTime} --> ${srtEndTime}\r\n`;
-                    srtOutput += `${cleanedText}\r\n\r\n`;
-                    srtIndex++;
-                }
+function cleanAssToSrt(assContent) {
+    // این Regex قدرتمند برای پارس کردن خطوط دیالوگ طراحی شده است.
+    // این الگو 10 بخش اصلی یک خط دیالوگ را به درستی استخراج می‌کند.
+    const assDialoguePattern = /^Dialogue:\s*([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([\s\S]*)$/;
+
+    // توابع کمکی بدون تغییر باقی می‌مانند
+    const cleanTextFromAss = (text) => {
+        if (!text) return '';
+        return text.replace(/\{[^}]*}/g, '').replace(/\\N/g, '\r\n').trim();
+    };
+
+    const formatTimeToSrt = (assTime) => {
+        const parts = assTime.match(/(\d):(\d{2}):(\d{2})\.(\d{2})/);
+        if (!parts) return "00:00:00,000";
+        const h = parts[1].padStart(2, '0');
+        const m = parts[2];
+        const s = parts[3];
+        const ms = parseInt(parts[4], 10) * 10;
+        return `${h}:${m}:${s},${ms.toString().padStart(3, '0')}`;
+    };
+
+    const lines = assContent.split('\n');
+    let srtOutput = '';
+    let srtIndex = 1;
+
+    for (const line of lines) {
+        // هر خط را با الگوی Regex تطبیق می‌دهیم
+        const match = line.trim().match(assDialoguePattern);
+
+        // اگر خط با الگو مطابقت داشت...
+        if (match) {
+            // استخراج زمان شروع، پایان و متن اصلی از گروه‌های درست Regex
+            const startTime = match[2]; // گروه دوم Regex
+            const endTime = match[3];   // گروه سوم Regex
+            const textPart = match[10]; // گروه دهم Regex (متن اصلی)
+
+            const cleanedText = cleanTextFromAss(textPart);
+
+            // فقط در صورتی که متنی باقی مانده باشد، آن را اضافه می‌کنیم
+            if (cleanedText) {
+                const srtStartTime = formatTimeToSrt(startTime);
+                const srtEndTime = formatTimeToSrt(endTime);
+
+                srtOutput += `${srtIndex}\r\n`;
+                srtOutput += `${srtStartTime} --> ${srtEndTime}\r\n`;
+                srtOutput += `${cleanedText}\r\n\r\n`;
+                srtIndex++;
             }
         }
-        return srtOutput.trim();
- }
+    }
+
+    return srtOutput.trim();
+}
 
 
     // --- 4. توابع مدیریت برنامه ---
