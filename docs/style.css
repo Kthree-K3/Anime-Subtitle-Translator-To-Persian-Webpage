@@ -203,6 +203,7 @@ button:disabled {
     display: none !important;
 }
 
+
 #error-display {
     text-align: right;
     background-color: #3b2020;
@@ -212,29 +213,55 @@ button:disabled {
     margin-top: 1.5rem;
 }
 
-
 #error-message {
-    white-space: pre-wrap; 
-    word-break: break-word; 
-    color: #d1d1d1; 
-    
- 
-    font-family: var(--font-family); 
-    direction: rtl;                  
-    text-align: right;              
-    line-height: 1.6;               
-    
- 
+    font-family: var(--font-family);
+    direction: rtl;
+    text-align: right;
+    line-height: 1.5;
     font-size: 1rem;
+    color: #d1d1d1;
 }
 
+
+#error-message > *:first-child {
+    margin-top: 0; 
+}
+
+#error-message > *:last-child {
+    margin-bottom: 0; 
+}
+
+#error-message b,
+#error-message p,
 #error-message ol {
-    padding-right: 20px; 
-    margin-top: 0.5rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 #error-message b {
-    color: var(--text-color); 
+    color: var(--text-color);
+    display: block; 
+}
+
+#error-message ol {
+    padding-right: 20px;
+    margin-bottom: 0;
+}
+
+#error-message li {
+    padding-right: 5px;
+    margin-bottom: 0.75rem; 
+}
+
+#error-message pre {
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: monospace;
+    direction: ltr;
+    text-align: left;
+    background-color: var(--bg-color);
+    padding: 1rem;
+    border-radius: 8px;
 }
 
 /* --- فوتر --- */
