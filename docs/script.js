@@ -31,9 +31,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 2. ثابت‌ها و متغیرهای اصلی ---
     
-    const COUNTER_NAMESPACE = 'anime-translator-project';
-    const COUNTER_VISITS_SLUG = 'visitspages';
-    const COUNTER_DOWNLOADS_SLUG = 'downloadfile'; 
+   
+const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.workers.dev'; 
     // IMPORTANT: DO NOT MODIFY THIS PROMPT. IT IS HIGHLY OPTIMIZED.
     const DEFAULT_PROMPT = `پرامپت پیشرفته و یکپارچه برای ترجمه حرفه‌ای زیرنویس انیمه (فرمت 'میکرو دی وی دی') 
 
@@ -246,19 +245,16 @@ function cleanAssToSrt(assContent) {
     // --- 4. توابع مدیریت برنامه ---
 
     
-// تابع افزایش شمارنده (بازدید یا دانلود)
+// تابع ۱: افزایش شمارنده
 async function incrementCounter(slug) {
     try {
-       
-        await fetch(`https://api.counterapi.dev/v/anime-translator-project/${slug}/up`, {
-            method: 'POST'
-        });
+        await fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/${slug}/up`, { method: 'POST' });
     } catch (error) {
         console.error(`Could not increment ${slug} counter:`, error);
     }
 }
 
-// تابع نمایش آمار بازدید و دانلود
+// تابع ۲: دریافت و نمایش آمار
 async function displayStats() {
     const visitsElement = document.getElementById('visits-counter');
     const downloadsElement = document.getElementById('downloads-counter');
@@ -266,16 +262,15 @@ async function displayStats() {
 
     try {
         const [visitsResponse, downloadsResponse] = await Promise.all([
-            fetch("https://api.counterapi.dev/v1/anime-translator-project/visitspages"),
-            fetch("https://api.counterapi.dev/v1/anime-translator-project/downloadfile")
+            fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/visitspages`),
+            fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/downloadfile`)
         ]);
 
         const visitsData = await visitsResponse.json();
         const downloadsData = await downloadsResponse.json();
 
-       
-        visitsElement.textContent = (visitsData.count ?? 0).toLocaleString('fa-IR');
-        downloadsElement.textContent = (downloadsData.count ?? 0).toLocaleString('fa-IR');
+        visitsElement.textContent = (visitsData.count || 0).toLocaleString('fa-IR');
+        downloadsElement.textContent = (downloadsData.count || 0).toLocaleString('fa-IR');
 
     } catch (error) {
         console.error("Could not fetch stats:", error);
@@ -283,7 +278,6 @@ async function displayStats() {
         downloadsElement.textContent = 'N/A';
     }
 }
-
 
 
     
@@ -921,6 +915,6 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     }
      // فراخوانی توابع برای نمایش آمار و شمارش بازدید
     displayStats();
-    incrementCounter("visitspages");
+    incrementCounter(COUNTER_VISITS_SLUG);
     // --- END: Add mobile-specific tooltip text ---
 });
