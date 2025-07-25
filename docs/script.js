@@ -179,42 +179,66 @@ document.addEventListener('DOMContentLoaded', () => {
         return srt;
        }
 
-    function cleanAssToSrt(assContent) {
-        const assDialoguePattern = /^Dialogue:\s*\d+,(\d+:\d{2}:\d{2}\.\d{2}),(\d+:\d{2}:\d{2}\.\d{2}),[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,[^,]*,([\s\S]*)$/;
-        const cleanTextFromAss = (text) => {
-            let cleaned = text.replace(/\{[^}]*\}/g, '');
-            cleaned = cleaned.replace(/\\N/g, '\n');
-            return cleaned;
-        };
-        const formatTimeToSrt = (assTime) => {
-            const parts = assTime.match(/(\d):(\d{2}):(\d{2})\.(\d{2})/);
-            if (!parts) return "00:00:00,000";
-            const h = parts[1].padStart(2, '0');
-            const m = parts[2];
-            const s = parts[3];
-            const ms = parseInt(parts[4], 10) * 10;
-            return `${h}:${m}:${s},${ms.toString().padStart(3, '0')}`;
-        };
+ 
+function cleanAssToSrt(assContent) {
+    const lines = assContent.split('\n');
+    let srtOutput = '';
+    let srtIndex = 1;
 
-        let srtOutput = '';
-        let srtIndex = 1;
-        const lines = assContent.split('\n');
-        for (const line of lines) {
-            const match = line.trim().match(assDialoguePattern);
-            if (match) {
-                const srtStartTime = formatTimeToSrt(match[1]);
-                const srtEndTime = formatTimeToSrt(match[2]);
-                const cleanedText = cleanTextFromAss(match[3]).trim();
-                if (cleanedText) {
-                    srtOutput += `${srtIndex}\r\n`;
-                    srtOutput += `${srtStartTime} --> ${srtEndTime}\r\n`;
-                    srtOutput += `${cleanedText}\r\n\r\n`;
-                    srtIndex++;
-                }
+    // این تابع کمکی برای تمیز کردن متن از تگ‌های ASS است
+    const cleanTextFromAss = (text) => {
+        if (!text) return '';
+        // حذف تمام بلاک‌های استایل {...}
+        // و جایگزینی \N با خط جدید
+        return text.replace(/\{[^}]*}/g, '').replace(/\\N/g, '\r\n').trim();
+    };
+
+    // این تابع کمکی زمان را از فرمت ASS به SRT تبدیل می‌کند
+    const formatTimeToSrt = (assTime) => {
+        // فرمت ورودی می‌تواند h:mm:ss.cs باشد
+        const parts = assTime.match(/(\d):(\d{2}):(\d{2})\.(\d{2})/);
+        if (!parts) return "00:00:00,000";
+        const h = parts[1].padStart(2, '0');
+        const m = parts[2];
+        const s = parts[3];
+        const ms = parseInt(parts[4], 10) * 10; // تبدیل صدم ثانیه به میلی‌ثانیه
+        return `${h}:${m}:${s},${ms.toString().padStart(3, '0')}`;
+    };
+
+    for (const line of lines) {
+        // فقط خطوطی که با "Dialogue:" شروع می‌شوند را پردازش کن
+        if (line.trim().startsWith('Dialogue:')) {
+            // به جای یک Regex شکننده، خط را با کاما جدا می‌کنیم
+            // 9 کامای اول را در نظر می‌گیریم، چون بقیه خط ممکن است خودش کاما داشته باشد
+            const parts = line.substring(9).split(',', 9);
+
+            // اطمینان از اینکه خط ساختار درستی دارد (حداقل 10 بخش)
+            if (parts.length < 9) {
+                continue; // اگر ساختار درست نبود، از این خط بگذر
+            }
+
+            const startTime = parts[1] ? parts[1].trim() : "0:00:00.00";
+            const endTime = parts[2] ? parts[2].trim() : "0:00:00.00";
+            const textPart = parts[9] || ''; // متن اصلی، آخرین بخش است
+
+            const cleanedText = cleanTextFromAss(textPart);
+
+            // << مرحله کلیدی >>
+            // فقط در صورتی زیرنویس را اضافه کن که بعد از تمیزکاری، متنی باقی مانده باشد
+            if (cleanedText) {
+                const srtStartTime = formatTimeToSrt(startTime);
+                const srtEndTime = formatTimeToSrt(endTime);
+
+                srtOutput += `${srtIndex}\r\n`;
+                srtOutput += `${srtStartTime} --> ${srtEndTime}\r\n`;
+                srtOutput += `${cleanedText}\r\n\r\n`;
+                srtIndex++;
             }
         }
-        return srtOutput.trim();
     }
+
+    return srtOutput.trim();
+}
 
 
     // --- 4. توابع مدیریت برنامه ---
