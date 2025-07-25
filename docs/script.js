@@ -246,23 +246,10 @@ function cleanAssToSrt(assContent) {
     // --- 4. توابع مدیریت برنامه ---
 
     
-// ====================================================================================
-// <<<< این دو تابع را جایگزین نسخه‌های قبلی در script.js کنید >>>>
-// ====================================================================================
-
-// تابع ۱: یک تابع عمومی برای افزایش هر شمارنده‌ای (بدون تغییر، این تابع درست بود)
-// ====================================================================================
-// <<<< این کد نهایی و اصلاح شده با پراکسی CORS است. لطفاً جایگزین کنید >>>>
-// ====================================================================================
-
-// آدرس پراکسی که مشکل CORS را حل می‌کند
-const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
-
-// تابع ۱: یک تابع عمومی برای افزایش هر شمارنده‌ای
 async function incrementCounter(slug) {
     try {
-        // پراکسی به ابتدای آدرس اضافه شده است
-        await fetch(`${CORS_PROXY}https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${slug}/up`, { method: 'POST' });
+        // این تابع فقط درخواست را ارسال می‌کند و به پاسخ آن کاری ندارد (fire and forget)
+        await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${slug}/up`, { method: 'POST' });
     } catch (error) {
         console.error(`Could not increment ${slug} counter:`, error);
     }
@@ -275,16 +262,17 @@ async function displayStats() {
     if (!visitsElement || !downloadsElement) return;
 
     try {
+        // دریافت همزمان هر دو آمار برای سرعت بیشتر
         const [visitsResponse, downloadsResponse] = await Promise.all([
-            // پراکسی به ابتدای هر دو آدرس اضافه شده است
-            fetch(`${CORS_PROXY}https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_VISITS_SLUG}`),
-            fetch(`${CORS_PROXY}https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_DOWNLOADS_SLUG}`)
+            // <<< اصلاح کلیدی: آدرس صحیح برای گرفتن آمار (بدون /up) >>>
+            fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_VISITS_SLUG}`),
+            fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_DOWNLOADS_SLUG}`)
         ]);
 
         const visitsData = await visitsResponse.json();
         const downloadsData = await downloadsResponse.json();
 
-        // منطق خواندن data.count که شما کشف کردید
+        // <<< اصلاح کلیدی: استفاده از data.count به جای data.value >>>
         visitsElement.textContent = (visitsData.count || 0).toLocaleString('fa-IR');
         downloadsElement.textContent = (downloadsData.count || 0).toLocaleString('fa-IR');
 
@@ -294,6 +282,8 @@ async function displayStats() {
         downloadsElement.textContent = 'N/A';
     }
 }
+
+
     
     function updateProgress(percentage, title) {
         const p = Math.min(100, Math.max(0, percentage));
