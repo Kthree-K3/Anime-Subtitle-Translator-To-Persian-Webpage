@@ -246,33 +246,33 @@ function cleanAssToSrt(assContent) {
     // --- 4. توابع مدیریت برنامه ---
 
     
+// تابع افزایش شمارنده (بازدید یا دانلود)
 async function incrementCounter(slug) {
     try {
-        // این تابع فقط درخواست را ارسال می‌کند و به پاسخ آن کاری ندارد (fire and forget)
-        await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${slug}/up`, { method: 'POST' });
+       
+        await fetch(`https://api.counterapi.dev/v/anime-translator-project/${slug}/up`, {
+            method: 'POST'
+        });
     } catch (error) {
         console.error(`Could not increment ${slug} counter:`, error);
     }
 }
 
-// تابع ۲: تابع دریافت و نمایش آمار (با منطق اصلاح شده)
+// تابع نمایش آمار بازدید و دانلود
 async function displayStats() {
     const visitsElement = document.getElementById('visits-counter');
     const downloadsElement = document.getElementById('downloads-counter');
     if (!visitsElement || !downloadsElement) return;
 
     try {
-        // دریافت همزمان هر دو آمار برای سرعت بیشتر
         const [visitsResponse, downloadsResponse] = await Promise.all([
-            // <<< اصلاح کلیدی: آدرس صحیح برای گرفتن آمار (بدون /up) >>>
-            fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_VISITS_SLUG}`),
-            fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_DOWNLOADS_SLUG}`)
+            fetch(`https://api.counterapi.dev/v1/anime-translator-project/visitspages`),
+            fetch(`https://api.counterapi.dev/v1/anime-translator-project/downloadfile`)
         ]);
 
         const visitsData = await visitsResponse.json();
         const downloadsData = await downloadsResponse.json();
 
-        // <<< اصلاح کلیدی: استفاده از data.count به جای data.value >>>
         visitsElement.textContent = (visitsData.count || 0).toLocaleString('fa-IR');
         downloadsElement.textContent = (downloadsData.count || 0).toLocaleString('fa-IR');
 
@@ -282,6 +282,7 @@ async function displayStats() {
         downloadsElement.textContent = 'N/A';
     }
 }
+
 
 
     
