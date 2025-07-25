@@ -749,6 +749,9 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
 
 
+// ====================================================================================
+// <<<< این بلوک کامل و اصلاح شده را جایگزین بلوک catch فعلی خود کنید >>>>
+// ====================================================================================
 } catch (error) {
     // مرحله ۱: پاکسازی و بازگرداندن UI به حالت اولیه، صرف نظر از نوع خطا
     clearInterval(thinkingPhaseTimer); 
@@ -776,6 +779,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         // حالت دوم: خطای دسترسی به دلیل تحریم یا فیلترشکن
         userFriendlyMessage = `
             <p class="error-subtitle"><b>خطا در دسترسی (مشکل تحریم یا فیلترشکن).</b></p>
+            <pre>${errorMessageText}</pre> 
             <p>این خطا به این معنی است که سرورهای گوگل به دلیل موقعیت جغرافیایی شما، اجازه دسترسی نمی‌دهند.</p>
             <p class="error-solution-title"><b>راه حل پیشنهادی:</b></p>
             <ol>
@@ -789,6 +793,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         // حالت سوم: سرورهای گوگل موقتاً شلوغ هستند
         userFriendlyMessage = `
             <p class="error-subtitle"><b>خطای موقتی از سوی سرور گوگل (Overloaded)</b></p>
+            <pre>${errorMessageText}</pre>
             <p>این خطا معمولاً به دلیل ترافیک بسیار بالای لحظه‌ای روی سرورهای گوگل رخ می‌دهد.</p>
             <p class="error-solution-title"><b>راه حل پیشنهادی:</b></p>
             <ol>
@@ -802,13 +807,14 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         // حالت چهارم: کلید API نامعتبر است
         userFriendlyMessage = `
             <p class="error-subtitle"><b>کلید API نامعتبر است.</b></p>
+            <pre>${errorMessageText}</pre>
             <p>لطفاً مطمئن شوید که کلید API را به درستی از <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> کپی کرده و در کادر مربوطه وارد کرده‌اید.</p>
             <p>همچنین به یاد داشته باشید که فیلترشکن شما باید در تمام مراحل روشن باشد.</p>
         `;
         translationStatusMessage.innerHTML = '❌ کلید API نامعتبر.';
 
     } else {
-        // حالت پنجم: سایر خطاهای پیش‌بینی نشده
+        // حالت پنجم: سایر خطاهای پیش‌بینی نشده (این بخش از قبل درست بود)
         userFriendlyMessage = `<b>یک خطای پیش‌بینی‌نشده رخ داد:</b><pre>${errorMessageText}</pre>`;
         translationStatusMessage.innerHTML = '❌ خطایی در ترجمه رخ داد.';
     }
