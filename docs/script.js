@@ -247,9 +247,10 @@ function cleanAssToSrt(assContent) {
     
 
 // تابع ۱: افزایش شمارنده (با استفاده از پراکسی و مسیر کامل)
+
 async function incrementCounter(slug) {
     try {
-        await fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/${slug}/up`, { method: 'POST' });
+               await fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/${slug}/up`);
     } catch (error) {
         console.error(`Could not increment ${slug} counter:`, error);
     }
