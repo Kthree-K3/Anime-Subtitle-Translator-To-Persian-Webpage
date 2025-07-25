@@ -266,15 +266,16 @@ async function displayStats() {
 
     try {
         const [visitsResponse, downloadsResponse] = await Promise.all([
-            fetch(`https://api.counterapi.dev/v1/anime-translator-project/visitspages`),
-            fetch(`https://api.counterapi.dev/v1/anime-translator-project/downloadfile`)
+            fetch("https://api.counterapi.dev/v1/anime-translator-project/visitspages"),
+            fetch("https://api.counterapi.dev/v1/anime-translator-project/downloadfile")
         ]);
 
         const visitsData = await visitsResponse.json();
         const downloadsData = await downloadsResponse.json();
 
-        visitsElement.textContent = (visitsData.count || 0).toLocaleString('fa-IR');
-        downloadsElement.textContent = (downloadsData.count || 0).toLocaleString('fa-IR');
+       
+        visitsElement.textContent = (visitsData.count ?? 0).toLocaleString('fa-IR');
+        downloadsElement.textContent = (downloadsData.count ?? 0).toLocaleString('fa-IR');
 
     } catch (error) {
         console.error("Could not fetch stats:", error);
