@@ -212,13 +212,29 @@ button:disabled {
     margin-top: 1.5rem;
 }
 
+
 #error-message {
-    white-space: pre-wrap;
-    word-break: break-all;
-    color: var(--subtle-text-color);
-    font-family: monospace;
-    direction: ltr;
-    text-align: left;
+    white-space: pre-wrap; 
+    word-break: break-word; 
+    color: #d1d1d1; 
+    
+ 
+    font-family: var(--font-family); 
+    direction: rtl;                  
+    text-align: right;              
+    line-height: 1.6;               
+    
+ 
+    font-size: 1rem;
+}
+
+#error-message ol {
+    padding-right: 20px; 
+    margin-top: 0.5rem;
+}
+
+#error-message b {
+    color: var(--text-color); 
 }
 
 /* --- فوتر --- */
