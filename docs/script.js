@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- 2. ثابت‌ها و متغیرهای اصلی ---
+    
+    const COUNTER_NAMESPACE = 'anime-translator-project';
+    const COUNTER_VISITS_SLUG = 'visitspages';
+    const COUNTER_DOWNLOADS_SLUG = 'downloadfile'; 
     // IMPORTANT: DO NOT MODIFY THIS PROMPT. IT IS HIGHLY OPTIMIZED.
     const DEFAULT_PROMPT = `پرامپت پیشرفته و یکپارچه برای ترجمه حرفه‌ای زیرنویس انیمه (فرمت 'میکرو دی وی دی') 
 
@@ -241,6 +245,40 @@ function cleanAssToSrt(assContent) {
 
     // --- 4. توابع مدیریت برنامه ---
 
+    
+async function incrementCounter(slug) {
+    try {
+        await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${slug}/up`, { method: 'POST' });
+    } catch (error) {
+        console.error(`Could not increment ${slug} counter:`, error);
+    }
+}
+
+// تابع برای دریافت و نمایش هر دو آمار
+async function displayStats() {
+    const visitsElement = document.getElementById('visits-counter');
+    const downloadsElement = document.getElementById('downloads-counter');
+    if (!visitsElement || !downloadsElement) return;
+
+    try {
+        const [visitsResponse, downloadsResponse] = await Promise.all([
+            fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_VISITS_SLUG}`),
+            fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_DOWNLOADS_SLUG}`)
+        ]);
+
+        const visitsData = await visitsResponse.json();
+        const downloadsData = await downloadsResponse.json();
+
+        visitsElement.textContent = (visitsData.count || 0).toLocaleString('fa-IR');
+        downloadsElement.textContent = (downloadsData.count || 0).toLocaleString('fa-IR');
+
+    } catch (error) {
+        console.error("Could not fetch stats:", error);
+        visitsElement.textContent = 'N/A';
+        downloadsElement.textContent = 'N/A';
+    }
+}
+    
     function updateProgress(percentage, title) {
         const p = Math.min(100, Math.max(0, percentage));
         if (title) {
@@ -835,7 +873,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
     downloadBtn.addEventListener('click', () => {
         if (!translatedMicroDVDContent) return;
-        
+         incrementCounter(COUNTER_DOWNLOADS_SLUG);
         const finalSrtContent = convertMicroDVDtoSrt(translatedMicroDVDContent);
         
         let originalFilename;
@@ -873,5 +911,8 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             uploadTooltip.innerHTML += '<br><br><b>نکته برای کاربران موبایل:</b> برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4)، توصیه می‌شود از مرورگر Firefox استفاده کنید؛ چرا که سایر مرورگرها ممکن است از این قابلیت پشتیبانی نکنند.';
         }
     }
+     // فراخوانی توابع برای نمایش آمار و شمارش بازدید
+    displayStats();
+    incrementCounter(COUNTER_VISITS_SLUG);
     // --- END: Add mobile-specific tooltip text ---
 });
