@@ -204,55 +204,72 @@ button:disabled {
 }
 
 
+/* ========================================================================= */
+/* <<<< قدم دوم: این کد را در انتهای style.css خود اضافه کنید >>>> */
+/* ========================================================================= */
 #error-display {
-    text-align: right;
-    background-color: #3b2020;
+    background-color: #302020; /* کمی رنگ پس‌زمینه را تیره‌تر و بهتر کردم */
     border: 1px solid var(--error-color);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1.5rem 2rem;
     margin-top: 1.5rem;
+}
+
+#error-display h2 { /* استایل برای عنوان اصلی "خطایی رخ داد!" */
+    font-size: 1.5rem;
+    border: none;
+    text-align: center;
+    margin-bottom: 2rem;
 }
 
 #error-message {
     font-family: var(--font-family);
     direction: rtl;
     text-align: right;
-    line-height: 1.5;
+    line-height: 1.7; /* یک فاصله خط استاندارد و خوانا */
     font-size: 1rem;
-    color: #d1d1d1;
+    color: #e0e0e0; /* رنگ متن خوانا */
 }
 
-
-#error-message > *:first-child {
-    margin-top: 0; 
-}
-
-#error-message > *:last-child {
-    margin-bottom: 0; 
-}
-
-#error-message b,
+/* کنترل دقیق فاصله بین بلوک‌های متن */
 #error-message p,
 #error-message ol {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+    margin: 0 0 1rem 0; /* فقط فاصله پایین، بدون فاصله بالا */
+}
+#error-message p:last-child,
+#error-message ol:last-child {
+    margin-bottom: 0; /* حذف فاصله از آخرین عنصر */
 }
 
-#error-message b {
+/* استایل‌دهی به عناوین بخش‌ها */
+.error-subtitle {
+    font-size: 1.1rem;
     color: var(--text-color);
-    display: block; 
+    margin-bottom: 0.75rem !important; /* فاصله کمتر بعد از عنوان فرعی */
+}
+.error-solution-title {
+    margin-top: 1.5rem !important; /* فاصله بیشتر قبل از "راه حل" */
+    font-size: 1.1rem;
 }
 
+/* استایل لیست شماره‌دار */
 #error-message ol {
-    padding-right: 20px;
+    padding-right: 25px;
+    margin-top: 0.5rem;
+}
+#error-message li {
+    padding-right: 5px;
+    margin-bottom: 0.75rem;
+}
+#error-message li:last-child {
     margin-bottom: 0;
 }
 
-#error-message li {
-    padding-right: 5px;
-    margin-bottom: 0.75rem; 
+#error-message b {
+    color: #ffcdd2; /* رنگ روشن‌تر برای کلمات بولد شده */
 }
 
+/* استایل برای خطاهای پیش‌بینی نشده */
 #error-message pre {
     white-space: pre-wrap;
     word-break: break-all;
@@ -262,6 +279,7 @@ button:disabled {
     background-color: var(--bg-color);
     padding: 1rem;
     border-radius: 8px;
+    margin-top: 1rem;
 }
 
 /* --- فوتر --- */
