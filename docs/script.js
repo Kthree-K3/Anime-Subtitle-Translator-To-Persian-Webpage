@@ -748,12 +748,11 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
 
 
-// ====================================================================================
-// <<<< قدم اول: این بلوک catch را در script.js جایگزین کنید >>>>
-// ====================================================================================
+
 } catch (error) {
-    clearInterval(thinkingPhaseTimer);
-    console.error(error);
+    // مرحله ۱: پاکسازی و بازگرداندن UI به حالت اولیه، صرف نظر از نوع خطا
+    clearInterval(thinkingPhaseTimer); 
+    console.error(error); // نمایش خطای فنی در کنسول برای دیباگ
     translateBtn.disabled = false;
     stopTranslationBtn.classList.add('hidden');
     downloadBtn.classList.add('hidden');
@@ -764,32 +763,17 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     translationStatusMessage.classList.remove('hidden', 'status-complete');
     translationStatusMessage.classList.add('status-incomplete', 'status-aborted');
 
+    // مرحله ۲: تشخیص نوع خطا و ساختن پیام مناسب برای کاربر
     let userFriendlyMessage = '';
     const errorMessageText = error.message || 'خطایی نامشخص رخ داد.';
 
     if (error.name === 'AbortError') {
+        // حالت اول: کاربر عملیات را متوقف کرده است
         userFriendlyMessage = '<p>عملیات ترجمه توسط کاربر متوقف شد.</p>';
         translationStatusMessage.innerHTML = '❌ ترجمه توسط کاربر متوقف شد.';
-    } else if (errorMessageText.toLowerCase().includes('overloaded') || errorMessageText.includes('503')) {
-        userFriendlyMessage = `
-            <p class="error-subtitle"><b>خطای موقتی از سوی سرور گوگل (Overloaded)</b></p>
-            <p>این خطا معمولاً به دلیل ترافیک بسیار بالای لحظه‌ای روی سرورهای گوگل رخ می‌دهد.</p>
-            <p class="error-solution-title"><b>راه حل پیشنهادی:</b></p>
-            <ol>
-                <li>چند دقیقه صبر کرده و دوباره امتحان کنید.</li>
-                <li>اگر مشکل تکرار شد، ممکن است به دلیل پیچیدگی خاص فایل شما باشد. لطفاً فایل زیرنویس را به صورت دستی به فرمت <b>.srt</b> تبدیل کرده و سپس آن را در برنامه انتخاب کنید.</li>
-                <li>همچنین می‌توانید در تنظیمات پیشرفته، یک مدل دیگر (مانند Gemini Flash) را امتحان کنید.</li>
-            </ol>
-        `;
-        translationStatusMessage.innerHTML = '❌ خطای موقتی سرور.';
-    } else if (errorMessageText.toLowerCase().includes('api key not valid')) {
-        userFriendlyMessage = `
-            <p class="error-subtitle"><b>کلید API نامعتبر است.</b></p>
-            <p>لطفاً مطمئن شوید که کلید API را به درستی از <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> کپی کرده و در کادر مربوطه وارد کرده‌اید.</p>
-            <p>همچنین به یاد داشته باشید که فیلترشکن شما باید در تمام مراحل روشن باشد.</p>
-        `;
-        translationStatusMessage.innerHTML = '❌ کلید API نامعتبر.';
+
     } else if (errorMessageText.toLowerCase().includes('location') || errorMessageText.toLowerCase().includes('permission denied')) {
+        // حالت دوم: خطای دسترسی به دلیل تحریم یا فیلترشکن
         userFriendlyMessage = `
             <p class="error-subtitle"><b>خطا در دسترسی (مشکل تحریم یا فیلترشکن).</b></p>
             <p>این خطا به این معنی است که سرورهای گوگل به دلیل موقعیت جغرافیایی شما، اجازه دسترسی نمی‌دهند.</p>
@@ -800,11 +784,36 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             </ol>
         `;
         translationStatusMessage.innerHTML = '❌ خطای دسترسی/فیلترشکن.';
+
+    } else if (errorMessageText.toLowerCase().includes('overloaded') || errorMessageText.includes('503')) {
+        // حالت سوم: سرورهای گوگل موقتاً شلوغ هستند
+        userFriendlyMessage = `
+            <p class="error-subtitle"><b>خطای موقتی از سوی سرور گوگل (Overloaded)</b></p>
+            <p>این خطا معمولاً به دلیل ترافیک بسیار بالای لحظه‌ای روی سرورهای گوگل رخ می‌دهد.</p>
+            <p class="error-solution-title"><b>راه حل پیشنهادی:</b></p>
+            <ol>
+                <li>چند دقیقه صبر کرده و دوباره امتحان کنید.</li>
+                <li>اگر مشکل تکرار شد، ممکن است به دلیل پیچیدگی خاص فایل شما باشد. لطفاً فایل زیرنویس را به صورت دستی (با نرم‌افزار Subtitle Edit) به فرمت <b>.srt</b> تبدیل کرده و سپس آن را در برنامه انتخاب کنید.</li>
+            </ol>
+        `;
+        translationStatusMessage.innerHTML = '❌ خطای موقتی سرور.';
+
+    } else if (errorMessageText.toLowerCase().includes('api key not valid')) {
+        // حالت چهارم: کلید API نامعتبر است
+        userFriendlyMessage = `
+            <p class="error-subtitle"><b>کلید API نامعتبر است.</b></p>
+            <p>لطفاً مطمئن شوید که کلید API را به درستی از <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> کپی کرده و در کادر مربوطه وارد کرده‌اید.</p>
+            <p>همچنین به یاد داشته باشید که فیلترشکن شما باید در تمام مراحل روشن باشد.</p>
+        `;
+        translationStatusMessage.innerHTML = '❌ کلید API نامعتبر.';
+
     } else {
+        // حالت پنجم: سایر خطاهای پیش‌بینی نشده
         userFriendlyMessage = `<b>یک خطای پیش‌بینی‌نشده رخ داد:</b><pre>${errorMessageText}</pre>`;
         translationStatusMessage.innerHTML = '❌ خطایی در ترجمه رخ داد.';
     }
 
+    // مرحله ۳: نمایش پیام نهایی در صفحه
     errorMessage.innerHTML = userFriendlyMessage;
     errorDisplay.classList.remove('hidden');
         }
