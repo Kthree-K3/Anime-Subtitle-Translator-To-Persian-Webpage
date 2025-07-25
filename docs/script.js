@@ -182,12 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
  
 
 
+
 function cleanAssToSrt(assContent) {
-    // این Regex قدرتمند برای پارس کردن خطوط دیالوگ طراحی شده است.
-    // این الگو 10 بخش اصلی یک خط دیالوگ را به درستی استخراج می‌کند.
     const assDialoguePattern = /^Dialogue:\s*([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([\s\S]*)$/;
 
-    // توابع کمکی بدون تغییر باقی می‌مانند
     const cleanTextFromAss = (text) => {
         if (!text) return '';
         return text.replace(/\{[^}]*}/g, '').replace(/\\N/g, '\r\n').trim();
@@ -208,23 +206,27 @@ function cleanAssToSrt(assContent) {
     let srtIndex = 1;
 
     for (const line of lines) {
-        // هر خط را با الگوی Regex تطبیق می‌دهیم
         const match = line.trim().match(assDialoguePattern);
 
-        // اگر خط با الگو مطابقت داشت...
         if (match) {
-            // استخراج زمان شروع، پایان و متن اصلی از گروه‌های درست Regex
-            const startTime = match[2]; // گروه دوم Regex
-            const endTime = match[3];   // گروه سوم Regex
-            const textPart = match[10]; // گروه دهم Regex (متن اصلی)
+            // <<< بخش کلیدی جدید: فیلتر کردن بر اساس نام کاراکتر >>>
+            const actorName = match[5].trim().toUpperCase();
+            // اگر نام کاراکتر "TEXT" یا موارد مشابه بود، آن را نادیده می‌گیریم.
+            // این‌ها معمولاً برای نوشته‌های روی تصویر استفاده می‌شوند.
+            if (actorName === 'TEXT' || actorName === 'SIGN') {
+                continue; // این خط را رد کن و به خط بعدی برو
+            }
+            // <<< پایان بخش جدید >>>
+
+            const startTime = match[2];
+            const endTime = match[3];
+            const textPart = match[10];
 
             const cleanedText = cleanTextFromAss(textPart);
 
-            // فقط در صورتی که متنی باقی مانده باشد، آن را اضافه می‌کنیم
             if (cleanedText) {
                 const srtStartTime = formatTimeToSrt(startTime);
                 const srtEndTime = formatTimeToSrt(endTime);
-
                 srtOutput += `${srtIndex}\r\n`;
                 srtOutput += `${srtStartTime} --> ${srtEndTime}\r\n`;
                 srtOutput += `${cleanedText}\r\n\r\n`;
@@ -476,54 +478,90 @@ function cleanAssToSrt(assContent) {
         });
     }
 
-    async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSignal) {
-        // This function no longer sets the title. It just performs the request.
-        const apiKey = apiKeyInput.value.trim();
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModelApiName}:streamGenerateContent?alt=sse&key=${apiKey}`;
-        try {
-            const activePrompt = getActivePromptContent();
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: activePrompt }, { fileData: { mime_type: "text/plain", file_uri: fileUri } }] }],
-                    generationConfig: { temperature: parseFloat(tempSlider.value), topP: parseFloat(topPSlider.value) }
-                }),
-                signal: abortSignal
-            });
-            if (!response.ok) throw new Error(await handleFetchError(response));
-            
-            const reader = response.body.getReader();
-            const decoder = new TextDecoder();
-            let fullText = '';
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const jsonStr = line.substring(5);
-                        try {
-                            const parsed = JSON.parse(jsonStr);
-                            const textPart = parsed.candidates[0]?.content?.parts[0]?.text;
-                            if (textPart) {
-                                fullText += textPart;
-                                onChunk(fullText);
-                            }
-                        } catch (e) { console.warn("Could not parse a JSON chunk:", jsonStr); }
-                    }
+
+async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSignal) {
+    const apiKey = apiKeyInput.value.trim();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModelApiName}:streamGenerateContent?alt=sse&key=${apiKey}`;
+    try {
+        const activePrompt = getActivePromptContent();
+
+        // بدنه کامل درخواست را در یک متغیر جداگانه ایجاد می‌کنیم تا خواناتر باشد
+        const requestBody = {
+            contents: [{
+                parts: [
+                    { text: activePrompt },
+                    { fileData: { mime_type: "text/plain", file_uri: fileUri } }
+                ]
+            }],
+            generationConfig: {
+                temperature: parseFloat(tempSlider.value),
+                topP: parseFloat(topPSlider.value)
+            },
+
+            // <<< بخش کلیدی که اضافه می‌شود >>>
+            // این تنظیمات به API می‌گوید فیلترهای ایمنی را برای این درخواست نادیده بگیرد.
+            // توجه: من دابل {} را به سینتکس صحیح جاوااسکریپت تبدیل کرده‌ام.
+            safetySettings: [
+                {
+                    category: "HARM_CATEGORY_HARASSMENT",
+                    threshold: "BLOCK_NONE"
+                },
+                {
+                    category: "HARM_CATEGORY_HATE_SPEECH",
+                    threshold: "BLOCK_NONE"
+                },
+                {
+                    category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold: "BLOCK_NONE"
+                },
+                {
+                    category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold: "BLOCK_NONE"
+                }
+            ]
+            // <<< پایان بخش اضافه شده >>>
+        };
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody), // از متغیر requestBody استفاده می‌کنیم
+            signal: abortSignal
+        });
+
+        if (!response.ok) throw new Error(await handleFetchError(response));
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const jsonStr = line.substring(5);
+                    try {
+                        const parsed = JSON.parse(jsonStr);
+                        const textPart = parsed.candidates[0]?.content?.parts[0]?.text;
+                        if (textPart) {
+                            fullText += textPart;
+                            onChunk(fullText);
+                        }
+                    } catch (e) { console.warn("Could not parse a JSON chunk:", jsonStr); }
                 }
             }
-            onEnd(fullText);
-        } catch(error) { 
-            if (error.name === 'AbortError') {
-                console.log('Fetch aborted by user.');
-                throw error;
-            }
-            onError(error); 
         }
+        onEnd(fullText);
+    } catch(error) { 
+        if (error.name === 'AbortError') {
+            console.log('Fetch aborted by user.');
+            throw error;
+        }
+        onError(error); 
     }
+}
     function checkTranslationCompleteness(translatedMicroDVD, originalLastEndFrame) {
         const lines = translatedMicroDVD.split('\n');
         const lineRegex = /\{(\d+)\}\{(\d+)\}(.*)/;
