@@ -246,22 +246,30 @@ function cleanAssToSrt(assContent) {
     // --- 4. توابع مدیریت برنامه ---
 
     
+// ====================================================================================
+// <<<< این دو تابع را جایگزین نسخه‌های قبلی در script.js کنید >>>>
+// ====================================================================================
+
+// تابع ۱: یک تابع عمومی برای افزایش هر شمارنده‌ای (بدون تغییر، این تابع درست بود)
 async function incrementCounter(slug) {
     try {
+        // این تابع فقط درخواست را ارسال می‌کند و به پاسخ آن کاری ندارد (fire and forget)
         await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${slug}/up`, { method: 'POST' });
     } catch (error) {
         console.error(`Could not increment ${slug} counter:`, error);
     }
 }
 
-// تابع برای دریافت و نمایش هر دو آمار
+// تابع ۲: تابع دریافت و نمایش آمار (با منطق اصلاح شده)
 async function displayStats() {
     const visitsElement = document.getElementById('visits-counter');
     const downloadsElement = document.getElementById('downloads-counter');
     if (!visitsElement || !downloadsElement) return;
 
     try {
+        // دریافت همزمان هر دو آمار برای سرعت بیشتر
         const [visitsResponse, downloadsResponse] = await Promise.all([
+            // <<< اصلاح کلیدی: آدرس صحیح برای گرفتن آمار (بدون /up) >>>
             fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_VISITS_SLUG}`),
             fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_DOWNLOADS_SLUG}`)
         ]);
@@ -269,6 +277,7 @@ async function displayStats() {
         const visitsData = await visitsResponse.json();
         const downloadsData = await downloadsResponse.json();
 
+        // <<< اصلاح کلیدی: استفاده از data.count به جای data.value >>>
         visitsElement.textContent = (visitsData.count || 0).toLocaleString('fa-IR');
         downloadsElement.textContent = (downloadsData.count || 0).toLocaleString('fa-IR');
 
