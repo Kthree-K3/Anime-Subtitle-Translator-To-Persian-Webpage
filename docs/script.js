@@ -791,9 +791,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
 
 
-// ====================================================================================
-// <<<< این بلوک کامل و اصلاح شده را جایگزین بلوک catch فعلی خود کنید >>>>
-// ====================================================================================
+
 } catch (error) {
     // مرحله ۱: پاکسازی و بازگرداندن UI به حالت اولیه، صرف نظر از نوع خطا
     clearInterval(thinkingPhaseTimer); 
@@ -830,6 +828,22 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             </ol>
         `;
         translationStatusMessage.innerHTML = '❌ خطای دسترسی/فیلترشکن.';
+
+        
+    } else if (errorMessageText.toLowerCase().includes('networkerror')) {
+        // حالت جدید: خطای عمومی شبکه به دلیل ناپایداری
+        userFriendlyMessage = `
+            <p class="error-subtitle"><b>خطای شبکه (NetworkError).</b></p>
+            <pre>${errorMessageText}</pre> 
+            <p>این خطا معمولاً به دلیل ناپایداری اتصال اینترنت یا فیلترشکن شما رخ می‌دهد.</p>
+            <p class="error-solution-title"><b>راه حل پیشنهادی:</b></p>
+            <ol>
+                <li>از اتصال پایدار اینترنت خود مطمئن شوید.</li>
+                <li>فیلترشکن خود را یک بار قطع و وصل کرده یا از یک سرور/فیلترشکن دیگر که پایدارتر است، استفاده کنید.</li>
+            </ol>
+        `;
+        translationStatusMessage.innerHTML = '❌ خطای شبکه.';
+  
 
     } else if (errorMessageText.toLowerCase().includes('overloaded') || errorMessageText.includes('503')) {
         // حالت سوم: سرورهای گوگل موقتاً شلوغ هستند
