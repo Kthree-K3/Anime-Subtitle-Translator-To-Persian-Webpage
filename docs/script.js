@@ -27,6 +27,41 @@ document.addEventListener('DOMContentLoaded', () => {
     // New elements
     const stopTranslationBtn = document.getElementById('stop-translation-btn');
     const translationStatusMessage = document.getElementById('translation-status-message');
+    const vpnWarningText = document.getElementById('vpn-warning-text');
+       // عناصر برای تنظیمات ایمنی
+    const safetyHarassmentToggle = document.getElementById('safety-harassment-toggle');
+    const safetyHateSpeechToggle = document.getElementById('safety-hate-speech-toggle');
+    const safetySexuallyExplicitToggle = document.getElementById('safety-sexually-explicit-toggle');
+    const safetyDangerousContentToggle = document.getElementById('safety-dangerous-content-toggle');
+     // START: عناصر جدید برای نمایش/عدم نمایش کلید API
+    const toggleApiKeyVisibilityBtn = document.getElementById('toggle-api-key-visibility');
+    const eyeOpenIcon = document.getElementById('eye-open');
+    const eyeSlashedIcon = document.getElementById('eye-slashed');
+    // END: عناصر جدید
+   // =================================================================
+// بخش جدید: مدیریت تیک‌پراکسی و متن هشدار
+// =================================================================
+const proxyToggle = document.getElementById('proxy-toggle');
+
+function updateVpnWarningVisibility() {
+    // اگر تیک‌پراکسی فعال بود، متن هشدار را مخفی کن، در غیر این صورت نمایش بده
+    if (vpnWarningText) {
+        vpnWarningText.style.display = proxyToggle.checked ? 'none' : 'block';
+    }
+}
+
+// بارگذاری وضعیت ذخیره شده تیک‌پراکسی از حافظه
+const savedProxyState = localStorage.getItem('proxyEnabled') === 'true';
+proxyToggle.checked = savedProxyState;
+updateVpnWarningVisibility(); // << تنظیم وضعیت اولیه متن هشدار
+
+// ذخیره وضعیت جدید و به‌روزرسانی نمایش هنگام تغییر تیک
+proxyToggle.addEventListener('change', () => {
+    localStorage.setItem('proxyEnabled', proxyToggle.checked);
+    updateVpnWarningVisibility(); // << به‌روزرسانی زنده متن هشدار
+});
+// =================================================================
+  
 
 
     // --- 2. ثابت‌ها و متغیرهای اصلی ---
@@ -187,13 +222,16 @@ const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.workers.dev';
 
 
 function cleanAssToSrt(assContent) {
-    const assDialoguePattern = /^Dialogue:\s*([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([^,]*),([\s\S]*)$/;
+    // === این Regex، نسخه هوشمند شده کد اصلی و پایدار شماست ===
+    // این الگو ۹ فیلد اول را رد می‌کند و "هرچیزی" که باقی ماند را به عنوان متن در نظر می‌گیرد.
+    // گروه‌ها: 1:Start, 2:End, 3:Name, 4:Text
+    const assDialoguePattern = /^Dialogue:\s*[^,]*,([^,]*),([^,]*),[^,]*?,([^,]*?),[^,]*,[^,]*,[^,]*,[^,]*,([\s\S]*)$/;
 
+    // توابع کمکی شما (بدون تغییر)
     const cleanTextFromAss = (text) => {
         if (!text) return '';
-        return text.replace(/\{[^}]*}/g, '').replace(/\\N/g, '\r\n').trim();
+        return text.replace(/\{[^}]*\}/g, '').replace(/\\N/g, '\n').trim();
     };
-
     const formatTimeToSrt = (assTime) => {
         const parts = assTime.match(/(\d):(\d{2}):(\d{2})\.(\d{2})/);
         if (!parts) return "00:00:00,000";
@@ -204,32 +242,28 @@ function cleanAssToSrt(assContent) {
         return `${h}:${m}:${s},${ms.toString().padStart(3, '0')}`;
     };
 
-    const lines = assContent.split('\n');
+    // منطق اصلی شما (فقط با یک شرط اضافه شده)
     let srtOutput = '';
     let srtIndex = 1;
-
+    const lines = assContent.split('\n');
     for (const line of lines) {
         const match = line.trim().match(assDialoguePattern);
-
         if (match) {
-            // <<< بخش کلیدی جدید: فیلتر کردن بر اساس نام کاراکتر >>>
-            const actorName = match[5].trim().toUpperCase();
-            // اگر نام کاراکتر "TEXT" یا موارد مشابه بود، آن را نادیده می‌گیریم.
-            // این‌ها معمولاً برای نوشته‌های روی تصویر استفاده می‌شوند.
-            if (actorName === 'TEXT' || actorName === 'SIGN') {
-                continue; // این خط را رد کن و به خط بعدی برو
+            // === تنها بخش جدید: فیلتر کردن بر اساس Name ===
+            // گروه سوم (match[3]) حالا فیلد Name است.
+            const actorName = match[3].trim().toLowerCase();
+            if (actorName.includes('sign') || actorName.includes('text') || actorName.includes('title')) {
+                continue; // این خط را نادیده می‌گیریم
             }
-            // <<< پایان بخش جدید >>>
+            // ===============================================
 
-            const startTime = match[2];
-            const endTime = match[3];
-            const textPart = match[10];
-
-            const cleanedText = cleanTextFromAss(textPart);
-
+            const srtStartTime = formatTimeToSrt(match[1]);
+            const srtEndTime = formatTimeToSrt(match[2]);
+            // گروه متن از ۳ به ۴ تغییر کرده است، چون یک گروه جدید برای Name اضافه کردیم.
+            const cleanedText = cleanTextFromAss(match[4]);
+            
+            // اگر متن پس از پاکسازی کدهای استایل، خالی بود، آن را هم نادیده می‌گیریم
             if (cleanedText) {
-                const srtStartTime = formatTimeToSrt(startTime);
-                const srtEndTime = formatTimeToSrt(endTime);
                 srtOutput += `${srtIndex}\r\n`;
                 srtOutput += `${srtStartTime} --> ${srtEndTime}\r\n`;
                 srtOutput += `${cleanedText}\r\n\r\n`;
@@ -237,7 +271,6 @@ function cleanAssToSrt(assContent) {
             }
         }
     }
-
     return srtOutput.trim();
 }
 
@@ -340,6 +373,30 @@ async function displayStats() {
     function deletePrompt(id) { const promptToDelete = prompts.find(p => p.id === id); if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; prompts = prompts.filter(p => p.id !== id); if (selectedPromptId === id) { selectPrompt('default'); } else { savePrompts(); renderPrompts(); } }
     function handlePromptEditing() { if (selectedPromptId === 'default') return; const currentPrompt = prompts.find(p => p.id === selectedPromptId); if (currentPrompt) { currentPrompt.content = promptDisplayArea.value; savePrompts(); } }
     function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); apiKeyInput.value = ''; loadModels(); loadPrompts(); checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
+
+    //  توابع  برای مدیریت تنظیمات ایمنی
+    function saveSafetySettings() {
+        const settings = {
+            harassment: safetyHarassmentToggle.checked,
+            hateSpeech: safetyHateSpeechToggle.checked,
+            sexuallyExplicit: safetySexuallyExplicitToggle.checked,
+            dangerousContent: safetyDangerousContentToggle.checked
+        };
+        localStorage.setItem('safetySettings', JSON.stringify(settings));
+    }
+
+    function loadSafetySettings() {
+        const savedSettings = localStorage.getItem('safetySettings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            safetyHarassmentToggle.checked = settings.harassment || false;
+            safetyHateSpeechToggle.checked = settings.hateSpeech || false;
+            safetySexuallyExplicitToggle.checked = settings.sexuallyExplicit || false;
+            safetyDangerousContentToggle.checked = settings.dangerousContent || false;
+        }
+        // اگر چیزی ذخیره نشده باشد، چک‌باکس‌ها به صورت پیش‌فرض تیک‌نخورده باقی می‌مانند.
+    }
+    //  توابع  برای مدیریت تنظیمات ایمنی
     
     function checkFormValidity() { translateBtn.disabled = !(uploadedFile && apiKeyInput.value.trim() !== ''); }
              async function handleFileSelect(file) {
@@ -422,7 +479,43 @@ async function displayStats() {
             alert('فرمت فایل پشتیبانی نمی‌شود. لطفاً یک فایل با فرمت .srt, .ass, .mkv, .mp4 انتخاب کنید.');
         }
              }
-    async function handleFetchError(response) { const errorText = await response.text(); try { return JSON.parse(errorText).error?.message || errorText; } catch (e) { return errorText; } }
+   async function handleFetchError(response) {
+    // ابتدا کل پاسخ را به صورت متن می‌خوانیم
+    const errorText = await response.text();
+
+    // 1. بررسی خطاهای HTML شناخته شده از سمت پراکسی (Cloudflare)
+    if (errorText.trim().startsWith('<!DOCTYPE html>') || errorText.includes('</head>')) {
+        if (errorText.includes('Error 524')) {
+            return 'خطای Timeout از پراکسی (Error 524): به نظر می‌رسد پاسخ از سرور گوگل بیش از حد طول کشیده است. این مشکل معمولاً به دلیل کندی یا ناپایداری اینترنت شما رخ می‌دهد. لطفاً چند دقیقه دیگر یا با یک اینترنت قوی‌تر دوباره امتحان کنید.';
+        }
+        if (errorText.includes('Error 522')) {
+            return 'خطای Connection Timeout از پراکسی (Error 522): پراکسی نتوانست به سرور گوگل متصل شود. لطفاً از فعال بودن فیلترشکن (در صورت عدم استفاده از پراکسی) یا پایداری اینترنت خود اطمینان حاصل کنید.';
+        }
+        if (errorText.includes('Error 520')) {
+            return 'خطای ناشناخته از پراکسی (Error 520): پراکسی یک پاسخ نامعتبر از سرور گوگل دریافت کرده است. این یک خطای نادر است، لطفاً دوباره امتحان کنید.';
+        }
+        // اگر یک صفحه HTML دیگر بود که ما نمی‌شناسیم
+        console.error("یک خطای HTML ناشناخته دریافت شد:", errorText);
+        return 'یک خطای ناشناخته از سمت پراکسی دریافت شد. لطفاً وضعیت اینترنت و پراکسی را بررسی کنید.';
+    }
+
+    // 2. اگر HTML نبود، تلاش برای پارس کردن به عنوان خطای استاندارد JSON از API
+    try {
+        const errorJson = JSON.parse(errorText);
+        // اگر پیام خطای مشخصی در JSON وجود داشت، آن را برمی‌گردانیم
+        if (errorJson.error && errorJson.error.message) {
+            return errorJson.error.message;
+        }
+        // اگر ساختار JSON متفاوت بود، کل آن را به صورت خوانا برمی‌گردانیم
+        return `پاسخ JSON نامعتبر از سرور: ${JSON.stringify(errorJson, null, 2)}`;
+    } catch (e) {
+        // 3. اگر پاسخ نه HTML بود و نه JSON، به عنوان یک خطای متنی ساده با آن برخورد می‌کنیم
+        // این حالت معمولاً برای خطاهای سطح پایین شبکه رخ می‌دهد
+        console.error("یک خطای متنی غیرقابل پارس دریافت شد:", errorText);
+        // فقط بخش کوچکی از متن را نمایش می‌دهیم تا صفحه به هم نریزد
+        return `یک پاسخ غیرمنتظره از سرور دریافت شد: "${errorText.substring(0, 100)}..."`;
+    }
+   }
 
     function runFFprobeCommand(file, args) {
         return new Promise((resolve, reject) => {
@@ -490,7 +583,10 @@ async function displayStats() {
             const formData = new FormData();
             const fileToUpload = new File([processedText], originalFilename, { type: 'text/plain' });
             formData.append('file', fileToUpload);
-            const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
+            // const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
+              const proxyEnabled = document.getElementById('proxy-toggle').checked;
+              const GEMINI_BASE_URL = proxyEnabled ? 'https://anime-translator-web.khalilkhko.workers.dev' : 'https://generativelanguage.googleapis.com';
+              const url = `${GEMINI_BASE_URL}/upload/v1beta/files?key=${apiKey}`;
             
             const xhr = new XMLHttpRequest();
             xhr.open('POST', url, true);
@@ -521,13 +617,34 @@ async function displayStats() {
     }
 
 
+
 async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSignal) {
     const apiKey = apiKeyInput.value.trim();
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModelApiName}:streamGenerateContent?alt=sse&key=${apiKey}`;
+    
+    const proxyEnabled = document.getElementById('proxy-toggle').checked;
+    const GEMINI_BASE_URL = proxyEnabled ? 'https://anime-translator-web.khalilkhko.workers.dev' : 'https://generativelanguage.googleapis.com';
+    const url = `${GEMINI_BASE_URL}/v1beta/models/${selectedModelApiName}:streamGenerateContent?alt=sse&key=${apiKey}`;
+
     try {
         const activePrompt = getActivePromptContent();
 
-        // بدنه کامل درخواست را در یک متغیر جداگانه ایجاد می‌کنیم تا خواناتر باشد
+        // START: ساخت دینامیک تنظیمات ایمنی
+        const safetySettings = [];
+        if (safetyHarassmentToggle.checked) {
+            safetySettings.push({ category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" });
+        }
+        if (safetyHateSpeechToggle.checked) {
+            safetySettings.push({ category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" });
+        }
+        if (safetySexuallyExplicitToggle.checked) {
+            safetySettings.push({ category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" });
+        }
+        if (safetyDangerousContentToggle.checked) {
+            safetySettings.push({ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" });
+        }
+        // END: ساخت دینامیک تنظیمات ایمنی
+
+        // ابتدا بدنه اصلی درخواست را بدون تنظیمات ایمنی می‌سازیم
         const requestBody = {
             contents: [{
                 parts: [
@@ -538,39 +655,27 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             generationConfig: {
                 temperature: parseFloat(tempSlider.value),
                 topP: parseFloat(topPSlider.value)
-            },
-
-            // <<< بخش کلیدی که اضافه می‌شود >>>
-            // این تنظیمات به API می‌گوید فیلترهای ایمنی را برای این درخواست نادیده بگیرد.
-            // توجه: من دابل {} را به سینتکس صحیح جاوااسکریپت تبدیل کرده‌ام.
-            safetySettings: [
-                {
-                    category: "HARM_CATEGORY_HARASSMENT",
-                    threshold: "BLOCK_NONE"
-                },
-                {
-                    category: "HARM_CATEGORY_HATE_SPEECH",
-                    threshold: "BLOCK_NONE"
-                },
-                {
-                    category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    threshold: "BLOCK_NONE"
-                },
-                {
-                    category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-                    threshold: "BLOCK_NONE"
-                }
-            ]
-            // <<< پایان بخش اضافه شده >>>
+            }
         };
+
+       
+        // فقط در صورتی که آرایه safetySettings خالی نباشد، آن را به درخواست اضافه می‌کنیم
+        if (safetySettings.length > 0) {
+            requestBody.safetySettings = safetySettings;
+        }
+
+      
+        console.log("درخواست ارسالی به API:", requestBody);
         
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestBody), // از متغیر requestBody استفاده می‌کنیم
+            body: JSON.stringify(requestBody),
             signal: abortSignal
         });
 
+        // ... بقیه کد تابع بدون تغییر ...
+        
         if (!response.ok) throw new Error(await handleFetchError(response));
         
         const reader = response.body.getReader();
@@ -596,6 +701,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             }
         }
         onEnd(fullText);
+
     } catch(error) { 
         if (error.name === 'AbortError') {
             console.log('Fetch aborted by user.');
@@ -619,6 +725,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     }
     
     // --- 5. اتصال Event Listener ها و اجرای اصلی ---
+    
     apiKeyInput.addEventListener('input', () => { localStorage.setItem('geminiApiKey', apiKeyInput.value); checkFormValidity(); });
     const savedApiKey = localStorage.getItem('geminiApiKey'); if (savedApiKey) apiKeyInput.value = savedApiKey;
     
@@ -626,6 +733,12 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     addPromptBtn.addEventListener('click', addPrompt);
     resetAllBtn.addEventListener('click', resetAllSettings);
     promptDisplayArea.addEventListener('input', handlePromptEditing);
+    
+    // START: اتصال Event Listener های تنظیمات ایمنی
+    [safetyHarassmentToggle, safetyHateSpeechToggle, safetySexuallyExplicitToggle, safetyDangerousContentToggle].forEach(toggle => {
+        toggle.addEventListener('change', saveSafetySettings);
+    });
+    // END: اتصال Event Listener های تنظیمات ایمنی
     
     tempSlider.addEventListener('input', (e) => tempValue.textContent = e.target.value);
     topPSlider.addEventListener('input', (e) => topPValue.textContent = e.target.value);
@@ -641,6 +754,23 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     fileInput.addEventListener('change', () => {
         if (fileInput.files.length > 0) handleFileSelect(fileInput.files[0]);
     });
+
+    
+    toggleApiKeyVisibilityBtn.addEventListener('click', () => {
+        const isPassword = apiKeyInput.type === 'password';
+        
+        if (isPassword) {
+            apiKeyInput.type = 'text';
+            eyeOpenIcon.style.display = 'none';
+            eyeSlashedIcon.style.display = 'block';
+        } else {
+            apiKeyInput.type = 'password';
+            eyeOpenIcon.style.display = 'block';
+            eyeSlashedIcon.style.display = 'none';
+        }
+    });
+
+
 
     translateBtn.addEventListener('click', async () => {
         if (!uploadedFile || !apiKeyInput.value.trim()) return;
@@ -920,6 +1050,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
        // بارگذاری اولیه
     loadModels();
     loadPrompts();
+     loadSafetySettings();
     checkFormValidity();
 
     // --- START: Add mobile-specific tooltip text ---
