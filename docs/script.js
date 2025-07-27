@@ -222,59 +222,143 @@ const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.workers.dev';
 
 
 function cleanAssToSrt(assContent) {
-    // === این Regex، نسخه هوشمند شده کد اصلی و پایدار شماست ===
-    // این الگو ۹ فیلد اول را رد می‌کند و "هرچیزی" که باقی ماند را به عنوان متن در نظر می‌گیرد.
-    // گروه‌ها: 1:Start, 2:End, 3:Name, 4:Text
-    const assDialoguePattern = /^Dialogue:\s*[^,]*,([^,]*),([^,]*),[^,]*?,([^,]*?),[^,]*,[^,]*,[^,]*,[^,]*,([\s\S]*)$/;
 
-    // توابع کمکی شما (بدون تغییر)
-    const cleanTextFromAss = (text) => {
-        if (!text) return '';
-        return text.replace(/\{[^}]*\}/g, '').replace(/\\N/g, '\n').trim();
-    };
-    const formatTimeToSrt = (assTime) => {
-        const parts = assTime.match(/(\d):(\d{2}):(\d{2})\.(\d{2})/);
-        if (!parts) return "00:00:00,000";
-        const h = parts[1].padStart(2, '0');
-        const m = parts[2];
-        const s = parts[3];
-        const ms = parseInt(parts[4], 10) * 10;
-        return `${h}:${m}:${s},${ms.toString().padStart(3, '0')}`;
-    };
+    // === توابع کمکی برای مدیریت زمان ===
+    function assTimeToMS(timeStr) {
+        if (!timeStr) return 0;
+        const parts = timeStr.split(/[:.]/);
+        const h = parseInt(parts[0], 10) || 0;
+        const m = parseInt(parts[1], 10) || 0;
+        const s = parseInt(parts[2], 10) || 0;
+        const cs = parseInt(parts[3], 10) || 0;
+        return (h * 3600 + m * 60 + s) * 1000 + cs * 10;
+    }
 
-    // منطق اصلی شما (فقط با یک شرط اضافه شده)
-    let srtOutput = '';
-    let srtIndex = 1;
+    function msToSrtTime(ms) {
+        const date = new Date(ms);
+        const hours = date.getUTCHours().toString().padStart(2, '0');
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+        const milliseconds = date.getUTCMilliseconds().toString().padStart(3, '0');
+        return `${hours}:${minutes}:${seconds},${milliseconds}`;
+    }
+
+    // === شروع الگوریتم مکانیکی و ساده ===
     const lines = assContent.split('\n');
-    for (const line of lines) {
-        const match = line.trim().match(assDialoguePattern);
-        if (match) {
-            // === تنها بخش جدید: فیلتر کردن بر اساس Name ===
-            // گروه سوم (match[3]) حالا فیلد Name است.
-            const actorName = match[3].trim().toLowerCase();
-            if (actorName.includes('sign') || actorName.includes('text') || actorName.includes('title')) {
-                continue; // این خط را نادیده می‌گیریم
-            }
-            // ===============================================
+    const dialogues = [];
 
-            const srtStartTime = formatTimeToSrt(match[1]);
-            const srtEndTime = formatTimeToSrt(match[2]);
-            // گروه متن از ۳ به ۴ تغییر کرده است، چون یک گروه جدید برای Name اضافه کردیم.
-            const cleanedText = cleanTextFromAss(match[4]);
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+
+        if (trimmedLine.startsWith('Dialogue:')) {
+            // --- قانون ۱: درآوردن زمان ---
+            const parts = trimmedLine.split(',');
+            const startTimeStr = parts[1];
+            const endTimeStr = parts[2];
+
+            // --- قانون ۲: بدست آوردن دیالوگ خام ---
+            const separatorIndex = trimmedLine.lastIndexOf(',,');
+            if (separatorIndex === -1) {
+                continue;
+            }
+            let rawText = trimmedLine.substring(separatorIndex + 2);
+
+            // --- قانون ۳: حذف خطوط نقاشی ---
+            if (rawText.trim().endsWith('{\\p0}')) {
+                continue;
+            }
+
+            // --- قانون ۴: پاک کردن استایل‌های داخل {} ---
+            let cleanedText = rawText.replace(/\{[^}]*\}/g, '');
+            cleanedText = cleanedText.replace(/\\N/g, '\r\n').trim();
             
-            // اگر متن پس از پاکسازی کدهای استایل، خالی بود، آن را هم نادیده می‌گیریم
             if (cleanedText) {
-                srtOutput += `${srtIndex}\r\n`;
-                srtOutput += `${srtStartTime} --> ${srtEndTime}\r\n`;
-                srtOutput += `${cleanedText}\r\n\r\n`;
-                srtIndex++;
+                dialogues.push({
+                    start: assTimeToMS(startTimeStr),
+                    end: assTimeToMS(endTimeStr),
+                    text: cleanedText
+                });
             }
         }
     }
+
+    // --- مرتب‌سازی بر اساس زمان شروع ---
+    dialogues.sort((a, b) => a.start - b.start);
+
+    // === ساخت خروجی نهایی SRT ===
+    let srtOutput = '';
+    let srtIndex = 1;
+    for (const sub of dialogues) {
+        const startTime = msToSrtTime(sub.start);
+        const endTime = msToSrtTime(sub.end);
+
+        srtOutput += `${srtIndex}\r\n`;
+        srtOutput += `${startTime} --> ${endTime}\r\n`;
+        srtOutput += `${sub.text}\r\n\r\n`;
+        srtIndex++;
+    }
+
     return srtOutput.trim();
 }
 
 
+
+    
+// === START: تابع نهایی "پیوند" بر اساس فرمان شما (نسخه بی‌نقص) ===
+function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
+    if (!originalMicroDVD) return '';
+    if (!aiOutputMicroDVD) return originalMicroDVD; // اگر AI چیزی برنگرداند، نسخه اصلی را برگردان
+
+    const originalLines = originalMicroDVD.trim().split('\n');
+    const aiLines = aiOutputMicroDVD.trim().split('\n');
+    
+    // مرحله ۱: ساخت یک "فرهنگ لغت" (Map) از ترجمه‌های سالم AI
+    // کلید: بلوک زمانی کامل "{start}{end}"
+    // مقدار: متن ترجمه شده
+    const translatedTextMap = new Map();
+    const microDVDLineRegex = /^{(\d+)}{(\d+)}(.*)$/;
+
+    for (const line of aiLines) {
+        const match = line.trim().match(microDVDLineRegex);
+        if (match) {
+            const startFrame = match[1];
+            const endFrame = match[2];
+            const text = match[3];
+            const timeBlockKey = `{${startFrame}}{${endFrame}}`; // کلید اصلی ما
+            translatedTextMap.set(timeBlockKey, text);
+        } else {
+            console.warn("خط خراب از خروجی هوش مصنوعی نادیده گرفته شد:", line.trim());
+        }
+    }
+
+    // مرحله ۲: بازسازی زیرنویس نهایی با استفاده از فایل اصلی به عنوان نقشه راه
+    const mergedLines = [];
+    for (const originalLine of originalLines) {
+        const originalMatch = originalLine.match(microDVDLineRegex);
+        if (originalMatch) {
+            const startFrame = originalMatch[1];
+            const endFrame = originalMatch[2];
+            const timeBlockKey = `{${startFrame}}{${endFrame}}`;
+
+            // اگر ترجمه‌ای با این بلوک زمانی دقیق پیدا شد، از آن استفاده می‌کنیم
+            if (translatedTextMap.has(timeBlockKey)) {
+                const translatedText = translatedTextMap.get(timeBlockKey);
+                mergedLines.push(`${timeBlockKey}${translatedText}`);
+            } else {
+                // اگر پیدا نشد، خود خط اصلی انگلیسی را دست‌نخورده نگه می‌داریم
+                console.warn(`ترجمه‌ای برای بلوک زمانی ${timeBlockKey} یافت نشد. خط اصلی انگلیسی حفظ می‌شود.`);
+                mergedLines.push(originalLine);
+            }
+        }
+    }
+
+    return mergedLines.join('\n');
+}
+// === END: تابع نهایی "پیوند" ===
+
+    
+
+    
     // --- 4. توابع مدیریت برنامه ---
 
     
@@ -901,6 +985,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                 clearInterval(thinkingPhaseTimer); // Ensure it's cleared if stream ends
                 updateProgress(100, "ترجمه با موفقیت انجام شد!");
                 translatedMicroDVDContent = finalText;
+                translatedMicroDVDContent = mergeTrustedFramesWithAiText(microDVDContent, finalText);
                 const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
                 translationStatusMessage.classList.remove('hidden', 'status-incomplete', 'status-aborted');
                 if (isComplete) {
