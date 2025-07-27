@@ -1175,6 +1175,25 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         `;
         translationStatusMessage.innerHTML = '❌ خطای موقتی سرور.';
 
+
+
+        
+    } else if (proxyToggle.checked && errorMessageText.toLowerCase().includes('stream')) {
+        // حالت جدید: خطای استریم هنگام استفاده از پراکسی
+        userFriendlyMessage = `
+            <p class="error-subtitle"><b>خطای دریافت ترجمه از پراکسی (Stream Error).</b></p>
+            <pre>${errorMessageText}</pre> 
+            <p>این خطا معمولاً زمانی رخ می‌دهد که پراکسی فعال است و ارتباط شما با آن به دلیل ناپایداری اینترنت یا فیلترشکن دچار اختلال می‌شود.</p>
+            <p class="error-solution-title"><b>راه حل پیشنهادی:</b></p>
+            <ol>
+                <li>از اتصال پایدار اینترنت خود مطمئن شوید.</li>
+                <li>اگر از فیلترشکن همزمان با پراکسی استفاده می‌کنید، آن را موقتاً خاموش کرده و دوباره امتحان کنید (پراکسی خودش کار فیلترشکن را انجام می‌دهد).</li>
+                <li>اگر مشکل ادامه داشت، چند دقیقه بعد دوباره امتحان کنید.</li>
+            </ol>
+        `;
+        translationStatusMessage.innerHTML = '❌ خطای پراکسی/استریم.';
+
+        
     } else if (errorMessageText.toLowerCase().includes('api key not valid')) {
         // حالت چهارم: کلید API نامعتبر است
         userFriendlyMessage = `
