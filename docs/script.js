@@ -301,7 +301,7 @@ function sortSrtContent(srtContent) {
 
 function cleanAssToSrt(assContent) {
 
-    // توابع کمکی برای مدیریت زمان (بدون تغییر)
+    // === توابع کمکی برای مدیریت زمان ===
     function assTimeToMS(timeStr) {
         if (!timeStr) return 0;
         const parts = timeStr.split(/[:.]/);
@@ -321,6 +321,7 @@ function cleanAssToSrt(assContent) {
         return `${hours}:${minutes}:${seconds},${milliseconds}`;
     }
 
+    // === شروع الگوریتم مکانیکی و ساده ===
     const lines = assContent.split('\n');
     const dialogues = [];
 
@@ -328,37 +329,36 @@ function cleanAssToSrt(assContent) {
         const trimmedLine = line.trim();
 
         if (trimmedLine.startsWith('Dialogue:')) {
-            // --- شروع روش جدید و بسیار قوی برای استخراج متن ---
+            // --- قانون ۱: درآوردن زمان ---
             const parts = trimmedLine.split(',');
-            if (parts.length < 10) continue; // خط ناقص است و آن را نادیده می‌گیریم
-
             const startTimeStr = parts[1];
             const endTimeStr = parts[2];
-            // متن اصلی از فیلد دهم (ایندکس ۹) به بعد شروع می‌شود.
-            // با slice(9) تمام بخش‌های متن را گرفته و با کاما دوباره به هم می‌چسبانیم.
-            // این کار باعث می‌شود کاماهای داخل متن اصلی حفظ شوند.
-            const rawText = parts.slice(9).join(',');
-            // --- پایان روش جدید ---
-            
-            // --- شروع قیف فیلتر با ترتیب صحیح درخواستی شما ---
 
-            // فیلتر ۱ (بالاترین اولویت): حذف خطوط طراحی
+            // --- قانون ۲: بدست آوردن دیالوگ خام ---
+            const separatorIndex = trimmedLine.lastIndexOf(',,');
+            if (separatorIndex === -1) {
+                continue;
+            }
+            let rawText = trimmedLine.substring(separatorIndex + 2);
+
+            // --- قانون ۳: حذف خطوط نقاشی ---
             if (rawText.trim().endsWith('{\\p0}')) {
                 continue;
             }
-
-            // فیلتر ۲: حذف خطوط کارائوکه تک‌حرفی
+            
             const textWithoutTags = rawText.replace(/\{[^}]*\}/g, '').trim();
             if (rawText.includes('{') && textWithoutTags.length === 1) {
                 continue;
             }
             
-            // --- پایان قیف فیلتر ---
+            // --- قانون ۴: پاک کردن استایل‌ها و کدهای کنترلی ---
+            let cleanedText = rawText.replace(/\{[^}]*\}/g, '');
             
-            // پاکسازی نهایی برای دیالوگ‌های معتبر
-            // از textWithoutTags که قبلا محاسبه شده استفاده می‌کنیم و فقط \N را جایگزین می‌کنیم.
-            const cleanedText = textWithoutTags.replace(/\\N/g, '\r\n');
-
+         
+            // تمام \h و \n ها را به فاصله یا خط جدید تبدیل می‌کند.
+            cleanedText = cleanedText.replace(/\\h/g, ' ').replace(/\\n/g, '\r\n').replace(/\\N/g, '\r\n').trim();
+            // === END: خط جدید ===
+            
             if (cleanedText) {
                 dialogues.push({
                     start: assTimeToMS(startTimeStr),
@@ -369,15 +369,19 @@ function cleanAssToSrt(assContent) {
         }
     }
 
-    // مرتب‌سازی و ساخت خروجی نهایی (بدون تغییر)
+    // --- مرتب‌سازی بر اساس زمان شروع ---
     dialogues.sort((a, b) => a.start - b.start);
 
+    // === ساخت خروجی نهایی SRT ===
     let srtOutput = '';
     let srtIndex = 1;
     for (const sub of dialogues) {
         const startTime = msToSrtTime(sub.start);
         const endTime = msToSrtTime(sub.end);
-        srtOutput += `${srtIndex}\r\n${startTime} --> ${endTime}\r\n${sub.text}\r\n\r\n`;
+
+        srtOutput += `${srtIndex}\r\n`;
+        srtOutput += `${startTime} --> ${endTime}\r\n`;
+        srtOutput += `${sub.text}\r\n\r\n`;
         srtIndex++;
     }
 
