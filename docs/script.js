@@ -297,9 +297,10 @@ function sortSrtContent(srtContent) {
 // === END: تابع جدید ===```
 
 
+
 function cleanAssToSrt(assContent) {
 
-    // === توابع کمکی برای مدیریت زمان ===
+    // توابع کمکی برای مدیریت زمان
     function assTimeToMS(timeStr) {
         if (!timeStr) return 0;
         const parts = timeStr.split(/[:.]/);
@@ -319,7 +320,6 @@ function cleanAssToSrt(assContent) {
         return `${hours}:${minutes}:${seconds},${milliseconds}`;
     }
 
-    // === شروع الگوریتم مکانیکی و ساده ===
     const lines = assContent.split('\n');
     const dialogues = [];
 
@@ -327,55 +327,55 @@ function cleanAssToSrt(assContent) {
         const trimmedLine = line.trim();
 
         if (trimmedLine.startsWith('Dialogue:')) {
-            // --- قانون ۱: درآوردن زمان ---
-            const parts = trimmedLine.split(',');
+            const parts = trimmedLine.split(',', 10);
+            if (parts.length < 10) continue;
+
             const startTimeStr = parts[1];
             const endTimeStr = parts[2];
-
-            // --- قانون ۲: بدست آوردن دیالوگ خام ---
-            const separatorIndex = trimmedLine.lastIndexOf(',,');
-            if (separatorIndex === -1) {
-                continue;
-            }
-            let rawText = trimmedLine.substring(separatorIndex + 2);
-
-            // --- قانون ۳: حذف خطوط نقاشی ---
-            if (rawText.trim().endsWith('{\\p0}')) {
-                continue;
-            }
-
-            // --- قانون ۴: پاک کردن استایل‌های داخل {} ---
-            let cleanedText = rawText.replace(/\{[^}]*\}/g, '');
-            cleanedText = cleanedText.replace(/\\N/g, '\r\n').trim();
+            const rawText = parts.slice(9).join(',');
             
-            if (cleanedText) {
+            // --- شروع فیلتر اصلی بر اساس ایده شما ---
+
+            // ۱. متن را از تگ‌های استایل پاک می‌کنیم
+            const cleanedTextForCheck = rawText.replace(/\{[^}]*\}/g, '').trim();
+
+            // ۲. قانون را اعمال می‌کنیم:
+            // اگر متن خام شامل تگ {} بود و متن پاک‌شده دقیقاً ۱ کاراکتر داشت، آن را نادیده می‌گیریم
+            if (rawText.includes('{') && cleanedTextForCheck.length === 1) {
+                continue; // این خط را رد کن
+            }
+
+            // --- پایان فیلتر اصلی ---
+
+            // اگر خط از فیلتر عبور کرد، آن را برای خروجی نهایی پردازش می‌کنیم
+            const finalText = rawText.replace(/\{[^}]*\}/g, '').replace(/\\N/g, '\r\n').trim();
+
+            if (finalText) {
                 dialogues.push({
                     start: assTimeToMS(startTimeStr),
                     end: assTimeToMS(endTimeStr),
-                    text: cleanedText
+                    text: finalText
                 });
             }
         }
     }
 
-    // --- مرتب‌سازی بر اساس زمان شروع ---
+    // مرتب‌سازی دیالوگ‌های معتبر بر اساس زمان شروع
     dialogues.sort((a, b) => a.start - b.start);
 
-    // === ساخت خروجی نهایی SRT ===
+    // ساخت خروجی نهایی SRT
     let srtOutput = '';
     let srtIndex = 1;
     for (const sub of dialogues) {
         const startTime = msToSrtTime(sub.start);
         const endTime = msToSrtTime(sub.end);
-
-        srtOutput += `${srtIndex}\r\n`;
-        srtOutput += `${startTime} --> ${endTime}\r\n`;
-        srtOutput += `${sub.text}\r\n\r\n`;
+        srtOutput += `${srtIndex}\r\n${startTime} --> ${endTime}\r\n${sub.text}\r\n\r\n`;
         srtIndex++;
     }
 
     return srtOutput.trim();
 }
+
 
 
 
