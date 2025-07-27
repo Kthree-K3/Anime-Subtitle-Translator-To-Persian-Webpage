@@ -171,18 +171,57 @@ const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.workers.dev';
         const totalSeconds = (hours * 3600) + (minutes * 60) + seconds + (milliseconds / 1000);
         return Math.floor(totalSeconds * fps);
     }
-    function convertSrtToMicroDVD(srtContent, fps = 23.976) {
-        const normalizedContent = srtContent.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n');
-        const srtBlockRegex = /(\d+)\s*\n(\d{2}:\d{2}:\d{2},\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2},\d{3})\s*\n([\s\S]+?)(?=\n\n|\n*$)/g;
+           function convertSrtToMicroDVD(srtContent, fps = 23.976) {
+        // رویکرد جدید و مقاوم: به جای یک Regex پیچیده، فایل را بلوک به بلوک پردازش می‌کنیم.
+        // این روش در برابر فرمت‌بندی‌های غیر استاندارد SRT بسیار پایدارتر عمل می‌کند.
+
+        // 1. نرمال‌سازی خطوط جدید و تقسیم فایل به بلوک‌های مجزا بر اساس خطوط خالی.
+        const blocks = srtContent.replace(/\r\n/g, '\n').split(/\n\n+/);
         let microDVD = '';
-        let match;
-        while ((match = srtBlockRegex.exec(normalizedContent)) !== null) {
-            const startTime = match[2];
-            const endTime = match[3];
-            let text = match[4].trim().replace(/\n/g, '|');
-            const startFrame = timeToFrames(startTime, fps);
-            const endFrame = timeToFrames(endTime, fps);
-            microDVD += `{${startFrame}}{${endFrame}}${text}\n`;
+        
+        // الگوی Regex برای پیدا کردن خط زمان‌بندی در هر بلوک
+        const timeRegex = /(\d{2}:\d{2}:\d{2},\d{3})\s+-->\s+(\d{2}:\d{2}:\d{2},\d{3})/;
+
+        for (const block of blocks) {
+            const trimmedBlock = block.trim();
+            if (!trimmedBlock) {
+                continue; // از بلوک‌های کاملاً خالی صرف نظر کن
+            }
+
+            const lines = trimmedBlock.split('\n');
+            
+            // یک بلوک معتبر حداقل به 2 خط نیاز دارد (شماره و زمانبندی)
+            if (lines.length < 2) {
+                continue;
+            }
+
+            // پیدا کردن خطی که شامل زمان‌بندی است
+            const timeLineIndex = lines.findIndex(line => timeRegex.test(line));
+
+            // اگر هیچ خط زمانبندی در بلوک پیدا نشد، بلوک نامعتبر است
+            if (timeLineIndex === -1) {
+                continue;
+            }
+
+            const timeMatch = lines[timeLineIndex].match(timeRegex);
+            
+            // تمام خطوط بعد از خط زمانبندی، به عنوان متن دیالوگ در نظر گرفته می‌شوند.
+            const textLines = lines.slice(timeLineIndex + 1);
+
+            // خطوط متن را با کاراکتر | به هم متصل کرده و فضاهای خالی ابتدا و انتها را حذف می‌کنیم
+            const text = textLines.join('|').trim();
+
+            // *** این شرط اصلی و نهایی است ***
+            // اگر پس از پردازش، متنی باقی مانده باشد، آن را به خروجی اضافه کن.
+            // در غیر این صورت (بلوک بدون دیالوگ)، کل بلوک نادیده گرفته می‌شود.
+            if (text) {
+                const startTime = timeMatch[1];
+                const endTime = timeMatch[2];
+                const startFrame = timeToFrames(startTime, fps);
+                const endFrame = timeToFrames(endTime, fps);
+                
+                microDVD += `{${startFrame}}{${endFrame}}${text}\n`;
+            }
         }
         return microDVD.trim();
     }
@@ -219,6 +258,43 @@ const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.workers.dev';
 
  
 
+// === START: تابع جدید برای مرتب‌سازی فایل‌های SRT ===
+function sortSrtContent(srtContent) {
+    // تابع کمکی برای تبدیل زمان SRT به میلی‌ثانیه
+    function srtTimeToMS(timeStr) {
+        const parts = timeStr.split(/[:,]/);
+        const h = parseInt(parts[0], 10) || 0;
+        const m = parseInt(parts[1], 10) || 0;
+        const s = parseInt(parts[2], 10) || 0;
+        const ms = parseInt(parts[3], 10) || 0;
+        return (h * 3600 + m * 60 + s) * 1000 + ms;
+    }
+
+    const srtBlockRegex = /(\d+)\s*\n(\d{2}:\d{2}:\d{2},\d{3})\s-->\s(\d{2}:\d{2}:\d{2},\d{3})\s*\n([\s\S]+?)(?=\n\n|\n*$)/g;
+    const subs = [];
+    let match;
+
+    while ((match = srtBlockRegex.exec(srtContent)) !== null) {
+        subs.push({
+            startMS: srtTimeToMS(match[2]),
+            fullBlock: match[0] // کل بلوک زیرنویس را نگه می‌داریم
+        });
+    }
+
+    // مرتب‌سازی بر اساس زمان شروع
+    subs.sort((a, b) => a.startMS - b.startMS);
+
+    // بازسازی فایل SRT با شماره‌گذاری جدید و صحیح
+    let newSrtContent = '';
+    subs.forEach((sub, index) => {
+        // شماره ایندکس قدیمی را با شماره جدید جایگزین می‌کنیم
+        const correctedBlock = sub.fullBlock.replace(/^\d+/, index + 1);
+        newSrtContent += correctedBlock + '\r\n\r\n';
+    });
+
+    return newSrtContent.trim();
+}
+// === END: تابع جدید ===```
 
 
 function cleanAssToSrt(assContent) {
@@ -306,10 +382,10 @@ function cleanAssToSrt(assContent) {
     
 // === START: تابع نهایی "پیوند" بر اساس فرمان شما (نسخه بی‌نقص) ===
 function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
-    if (!originalMicroDVD) return '';
-    if (!aiOutputMicroDVD) return originalMicroDVD; // اگر AI چیزی برنگرداند، نسخه اصلی را برگردان
-
+    if (!originalMicroDVD) return { mergedText: '', untranslatedCount: 0 };
     const originalLines = originalMicroDVD.trim().split('\n');
+    if (!aiOutputMicroDVD) return { mergedText: originalMicroDVD, untranslatedCount: originalLines.length };
+
     const aiLines = aiOutputMicroDVD.trim().split('\n');
     
     // مرحله ۱: ساخت یک "فرهنگ لغت" (Map) از ترجمه‌های سالم AI
@@ -333,6 +409,7 @@ function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
 
     // مرحله ۲: بازسازی زیرنویس نهایی با استفاده از فایل اصلی به عنوان نقشه راه
     const mergedLines = [];
+    let untranslatedCount = 0; // شمارنده برای خطوط ترجمه نشده
     for (const originalLine of originalLines) {
         const originalMatch = originalLine.match(microDVDLineRegex);
         if (originalMatch) {
@@ -348,11 +425,15 @@ function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
                 // اگر پیدا نشد، خود خط اصلی انگلیسی را دست‌نخورده نگه می‌داریم
                 console.warn(`ترجمه‌ای برای بلوک زمانی ${timeBlockKey} یافت نشد. خط اصلی انگلیسی حفظ می‌شود.`);
                 mergedLines.push(originalLine);
+                untranslatedCount++; // افزایش شمارنده
             }
         }
     }
 
-    return mergedLines.join('\n');
+    return {
+        mergedText: mergedLines.join('\n'),
+        untranslatedCount: untranslatedCount
+    };
 }
 // === END: تابع نهایی "پیوند" ===
 
@@ -711,24 +792,12 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
     try {
         const activePrompt = getActivePromptContent();
-
-        // START: ساخت دینامیک تنظیمات ایمنی
         const safetySettings = [];
-        if (safetyHarassmentToggle.checked) {
-            safetySettings.push({ category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" });
-        }
-        if (safetyHateSpeechToggle.checked) {
-            safetySettings.push({ category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" });
-        }
-        if (safetySexuallyExplicitToggle.checked) {
-            safetySettings.push({ category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" });
-        }
-        if (safetyDangerousContentToggle.checked) {
-            safetySettings.push({ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" });
-        }
-        // END: ساخت دینامیک تنظیمات ایمنی
+        if (safetyHarassmentToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" });
+        if (safetyHateSpeechToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" });
+        if (safetySexuallyExplicitToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" });
+        if (safetyDangerousContentToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" });
 
-        // ابتدا بدنه اصلی درخواست را بدون تنظیمات ایمنی می‌سازیم
         const requestBody = {
             contents: [{
                 parts: [
@@ -742,13 +811,10 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             }
         };
 
-       
-        // فقط در صورتی که آرایه safetySettings خالی نباشد، آن را به درخواست اضافه می‌کنیم
         if (safetySettings.length > 0) {
             requestBody.safetySettings = safetySettings;
         }
 
-      
         console.log("درخواست ارسالی به API:", requestBody);
         
         const response = await fetch(url, {
@@ -757,19 +823,41 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             body: JSON.stringify(requestBody),
             signal: abortSignal
         });
-
-        // ... بقیه کد تابع بدون تغییر ...
         
         if (!response.ok) throw new Error(await handleFetchError(response));
         
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullText = '';
+        
+        // --- START OF ROBUST STREAM HANDLING ---
+        let buffer = ''; // بافر برای نگهداری داده‌های ناقص
+
         while (true) {
             const { value, done } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
+            if (done) {
+                // اگر در پایان کار چیزی در بافر مانده بود، آن را نیز پردازش کن
+                if (buffer.startsWith('data: ')) {
+                     try {
+                        const jsonStr = buffer.substring(5);
+                        const parsed = JSON.parse(jsonStr);
+                        const textPart = parsed.candidates[0]?.content?.parts[0]?.text;
+                        if (textPart) {
+                            fullText += textPart;
+                        }
+                    } catch (e) { console.warn("Could not parse final buffer chunk:", buffer); }
+                }
+                break;
+            }
+
+            // بسته جدید را به بافر اضافه کرده و بر اساس خط جدید تقسیم می‌کنیم
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+
+            // آخرین خط را در بافر نگه می‌داریم چون ممکن است ناقص باشد
+            buffer = lines.pop(); 
+
+            // حالا فقط خطوط کامل را پردازش می‌کنیم
             for (const line of lines) {
                 if (line.startsWith('data: ')) {
                     const jsonStr = line.substring(5);
@@ -778,13 +866,15 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                         const textPart = parsed.candidates[0]?.content?.parts[0]?.text;
                         if (textPart) {
                             fullText += textPart;
-                            onChunk(fullText);
+                            onChunk(fullText); // نمایش زنده را با متن کامل و انباشته شده به‌روز کن
                         }
                     } catch (e) { console.warn("Could not parse a JSON chunk:", jsonStr); }
                 }
             }
         }
-        onEnd(fullText);
+        // --- END OF ROBUST STREAM HANDLING ---
+
+        onEnd(fullText); // پس از اتمام کامل استریم، متن نهایی را ارسال کن
 
     } catch(error) { 
         if (error.name === 'AbortError') {
@@ -856,7 +946,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
 
 
-    translateBtn.addEventListener('click', async () => {
+        translateBtn.addEventListener('click', async () => {
         if (!uploadedFile || !apiKeyInput.value.trim()) return;
 
         progressSection.classList.remove('hidden');
@@ -923,7 +1013,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                     updateProgress(50, 'مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...');
                     cleanSrtContent = cleanAssToSrt(fileContent);
                 } else { 
-                    cleanSrtContent = fileContent;
+                     cleanSrtContent = sortSrtContent(fileContent);
                 }
                 updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
             }
@@ -984,17 +1074,28 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             const onStreamEnd = (finalText) => {
                 clearInterval(thinkingPhaseTimer); // Ensure it's cleared if stream ends
                 updateProgress(100, "ترجمه با موفقیت انجام شد!");
-                translatedMicroDVDContent = finalText;
-                translatedMicroDVDContent = mergeTrustedFramesWithAiText(microDVDContent, finalText);
+
+                const mergeResult = mergeTrustedFramesWithAiText(microDVDContent, finalText);
+                translatedMicroDVDContent = mergeResult.mergedText;
+                const untranslatedCount = mergeResult.untranslatedCount;
+                
                 const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
                 translationStatusMessage.classList.remove('hidden', 'status-incomplete', 'status-aborted');
+
+                let statusText = '';
                 if (isComplete) {
                     translationStatusMessage.classList.add('status-complete');
-                    translationStatusMessage.innerHTML = '✔️ ترجمه کامل است.';
+                    statusText = '✔️ ترجمه کامل است.';
                 } else {
                     translationStatusMessage.classList.add('status-incomplete');
-                    translationStatusMessage.innerHTML = '⚠️ ترجمه ممکن است ناقص باشد.';
+                    statusText = '⚠️ ترجمه ممکن است ناقص باشد.';
                 }
+
+                if (untranslatedCount > 0) {
+                    statusText += ` (توجه: ترجمه ${untranslatedCount} خط یافت نشد و از متن اصلی استفاده شد.)`;
+                }
+
+                translationStatusMessage.innerHTML = statusText;
                 downloadBtn.classList.remove('hidden');
                 translateBtn.disabled = false;
                 stopTranslationBtn.classList.add('hidden');
@@ -1149,4 +1250,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     displayStats();
       incrementCounter('visitspages');
     // --- END: Add mobile-specific tooltip text ---
+
+    
+    
 });
