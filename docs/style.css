@@ -693,10 +693,11 @@ hr.footer-hr {
 
 
 
-/* === استایل‌های نهایی برای تنظیمات ایمنی === */
+/* === استایل‌های نهایی برای تنظیمات پیشرفته و ایمنی === */
 
-/* 1. اصلاح کامل summary */
-.safety-settings-details > summary {
+/* 1. اصلاح کامل summary برای هر دو بخش */
+.safety-settings-details > summary,
+.advanced-settings-details > summary {
     display: flex;
     align-items: center;
     gap: 0.5rem; /* فاصله بین اجزا */
@@ -708,32 +709,36 @@ hr.footer-hr {
     border: 1px solid transparent; /* یک حاشیه نامرئی برای جلوگیری از پرش هنگام اضافه شدن حاشیه اصلی */
 }
 
-.safety-settings-details > summary::-webkit-details-marker {
+.safety-settings-details > summary::-webkit-details-marker,
+.advanced-settings-details > summary::-webkit-details-marker {
     display: none;
 }
 
-.safety-settings-details > summary:hover {
+.safety-settings-details > summary:hover,
+.advanced-settings-details > summary:hover {
     background-color: #3c3c3c;
 }
 
-/* 2. اصلاح کامل مثلث */
-.safety-settings-details > summary::before {
+/* 2. اصلاح کامل مثلث برای هر دو بخش */
+.safety-settings-details > summary::before,
+.advanced-settings-details > summary::before {
     content: '◀'; /* مثلث در حالت بسته */
     display: inline-block;
     transition: transform 0.2s;
 }
 
-.safety-settings-details[open] > summary::before {
+.safety-settings-details[open] > summary::before,
+.advanced-settings-details[open] > summary::before {
     transform: rotate(-90deg); /* مثلث در حالت باز */
 }
 
-/* 3. کنترل جایگیری متن و علامت سوال اصلی */
+/* 3. کنترل جایگیری متن */
 .summary-text {
     font-weight: bold;
     font-size: 1.1rem;
 }
 
-/* 4. اصلاح کامل چیدمان آیتم‌های داخلی */
+/* 4. استایل چیدمان آیتم‌های داخلی (فقط برای تنظیمات ایمنی) */
 .safety-settings-content {
     margin-top: 1rem;
     padding: 1rem 1.5rem;
@@ -772,10 +777,12 @@ hr.footer-hr {
 }
 
 
-.safety-settings-details:not([open]) > summary {
+/* استایل هایلایت برای حالت بسته در هر دو بخش */
+.safety-settings-details:not([open]) > summary,
+.advanced-settings-details:not([open]) > summary {
     border-color: var(--accent-color);
     box-shadow: 0 0 8px rgba(255, 71, 126, 0.3); /* یک سایه ملایم برای زیبایی بیشتر */
-}
+}}
 
 /* === استایل‌های اصلاح شده برای دکمه نمایش/عدم نمایش کلید API === */
 
