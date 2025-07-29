@@ -467,25 +467,15 @@ async function incrementCounter(slug) {
 
 // تابع ۲: دریافت و نمایش آمار (با استفاده از پراکسی و مسیر کامل)
 async function displayStats() {
-    const visitsElement = document.getElementById('visits-counter');
     const downloadsElement = document.getElementById('downloads-counter');
-    if (!visitsElement || !downloadsElement) return;
+    if (!downloadsElement) return;
 
     try {
-        const [visitsResponse, downloadsResponse] = await Promise.all([
-            fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/visitspages`),
-            fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/downloadfile`)
-        ]);
-
-        const visitsData = await visitsResponse.json();
+        const downloadsResponse = await fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/downloadfile`);
         const downloadsData = await downloadsResponse.json();
-
-        visitsElement.textContent = (visitsData.count || 0).toLocaleString('fa-IR');
         downloadsElement.textContent = (downloadsData.count || 0).toLocaleString('fa-IR');
-
     } catch (error) {
         console.error("Could not fetch stats:", error);
-        visitsElement.textContent = 'N/A';
         downloadsElement.textContent = 'N/A';
     }
 }
@@ -1278,7 +1268,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     }
      // فراخوانی توابع برای نمایش آمار و شمارش بازدید
     displayStats();
-      incrementCounter('visitspages');
+      
     // --- END: Add mobile-specific tooltip text ---
 
     
