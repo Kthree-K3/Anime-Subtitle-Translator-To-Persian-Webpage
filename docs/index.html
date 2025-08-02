@@ -185,6 +185,23 @@
     </div>
 </div>
 
+<!-- START: بخش جدید برای انتخاب فرمت خروجی -->
+<div id="output-format-selector" class="setting hidden">
+    <label>فرمت فایل خروجی</label>
+    <p class="description">چون ورودی شما از نوع ASS است، می‌توانید انتخاب کنید که خروجی نیز با حفظ استایل‌ها به صورت ASS ذخیره شود.</p>
+    <div class="radio-group">
+	 <label>
+            <input type="radio" name="output-format" value="ass"  checked>
+            ASS (حفظ استایل‌ها - حرفه‌ای و زیبا)
+        </label>
+        <label>
+            <input type="radio" name="output-format" value="srt">
+            SRT (معمولی - سریع و ساده)
+        </label>
+       
+    </div>
+</div>
+
 
                 <p id="vpn-warning-text" class="description" style="text-align: center; font-weight: bold; color: var(--accent-color); margin-top: 1rem;">توجه: فیلترشکن شما باید در تمام طول فرآیند ترجمه روشن باقی بماند.</p>
                 <button id="translate-btn" disabled>
@@ -207,7 +224,7 @@
                 </button>
                 <!-- New Status Message -->
                 <p id="translation-status-message" class="hidden"></p>
-                <button id="download-btn" class="hidden"><span class="icon">📥</span> دانلود فایل SRT نهایی</button>
+                <button id="download-btn" class="hidden"><span class="icon">📥</span> دانلود فایل زیرنویس نهایی</button>
             </section>
 
            <div id="error-display" class="hidden">
@@ -219,10 +236,10 @@
                   
         <footer>
             <div class="stats-container" style="text-align: center; margin: 2rem 0; display: flex; justify-content: space-around;">
-   
+    
     <div class="stat-item">
         <span id="downloads-counter" style="font-size: 2rem; font-weight: bold; color: #ff477e;">...</span>
-        <p style="color: #a0a0a0; margin-top: 0.5rem;">ترجمه‌های موفق</p>
+          <p style="color: #a0a0a0; margin-top: 0.5rem;">تعداد ترجمه‌های موفق</p>
     </div>
             </div>
             <hr class="footer-hr">
