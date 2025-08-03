@@ -871,115 +871,106 @@ async function finalizeAssFile(assContent) {
     //  توابع  برای مدیریت تنظیمات ایمنی
     
     function checkFormValidity() { translateBtn.disabled = !(uploadedFile && apiKeyInput.value.trim() !== ''); }
-               async function handleFileSelect(file) {
-        // --- START: Reset states for new file ---
-        uploadedFile = null;
-        fileNameDisplay.innerHTML = '';
-        errorDisplay.classList.add('hidden');
-        isAssInput = false;
-        originalAssContent = '';
-        document.getElementById('output-format-selector').classList.add('hidden');
+   async function handleFileSelect(file) {
+    // --- START: Reset states for new file ---
+    uploadedFile = null;
+    fileNameDisplay.innerHTML = '';
+    errorDisplay.classList.add('hidden');
+    isAssInput = false;
+    originalAssContent = '';
+    document.getElementById('output-format-selector').classList.add('hidden');
+    checkFormValidity();
+    // --- END: Reset states ---
+
+    if (!file) return;
+
+    const fileName = file.name.toLowerCase();
+    const supportedVideoFormats = ['.mkv', '.mp4'];
+    const supportedSubtitleFormats = ['.srt', '.ass'];
+
+    const handleAssInput = async (fileObject) => {
+        isAssInput = true;
+        originalAssContent = await fileObject.text();
+        document.getElementById('output-format-selector').classList.remove('hidden');
+    };
+
+    if (supportedSubtitleFormats.some(ext => fileName.endsWith(ext))) {
+        uploadedFile = file;
+        const filenameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
+        const fullFilename = `${filenameWithoutExt}${fileName.substring(file.name.lastIndexOf('.'))}`;
+        fileNameDisplay.innerHTML = `فایل انتخاب شده:<br><span class="filename-text">${fullFilename}</span>`;
+        
+        if (fileName.endsWith('.ass')) {
+            await handleAssInput(file);
+        }
         checkFormValidity();
-        // --- END: Reset states ---
 
-        if (!file) return;
+    } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
+        if (isMobile() && !isFirefox()) {
+            alert("برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4) در موبایل، توصیه می‌شود از مرورگر Firefox استفاده کنید؛ چرا که سایر مرورگرها ممکن است از این قابلیت پشتیبانی نکنند.");
+        }
 
-        const fileName = file.name.toLowerCase();
-        const supportedVideoFormats = ['.mkv', '.mp4'];
-        const supportedSubtitleFormats = ['.srt', '.ass'];
+        fileNameDisplay.innerHTML = `لطفاً کمی صبر کنید:<br><span class="filename-text">${file.name}</span>`;
+        translateBtn.disabled = true;
 
-        const handleAssInput = async (fileObject) => {
-            isAssInput = true;
-            originalAssContent = await fileObject.text();
-            document.getElementById('output-format-selector').classList.remove('hidden');
-        };
+        try {
+            const result = await runFFprobeCommand(file, ['/data/' + file.name, '-print_format', 'json', '-show_streams', '-show_format']);
+            const parsedResult = JSON.parse(result.stdout);
+            if (!parsedResult.streams || parsedResult.streams.length === 0) throw new Error('هیچ ترکی در فایل ویدیویی یافت نشد.');
 
-        if (supportedSubtitleFormats.some(ext => fileName.endsWith(ext))) {
-            uploadedFile = file;
-            const filenameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.'));
-            const fullFilename = `${filenameWithoutExt}${fileName.substring(file.name.lastIndexOf('.'))}`;
-            fileNameDisplay.innerHTML = `فایل انتخاب شده:<br><span class="filename-text">${fullFilename}</span>`;
-            
-            if (fileName.endsWith('.ass')) {
-                await handleAssInput(file);
+            const subtitleStreams = parsedResult.streams.filter(s => s.codec_type === 'subtitle' && (s.codec_name === 'subrip' || s.codec_name === 'ass'));
+            if (subtitleStreams.length === 0) {
+                alert('هیچ ترک زیرنویس با فرمت SRT یا ASS در این فایل ویدیویی یافت نشد.');
+                fileNameDisplay.innerHTML = '';
+                return;
             }
+
+            const streamOptions = subtitleStreams.map((s, index) => {
+                const lang = s.tags?.language || 'unk';
+                const title = s.tags?.title ? `(${s.tags.title})` : '';
+                return `${index + 1}. [${lang}] ${s.codec_name} ${title}`.trim();
+            }).join('\n');
+            
+            let selectedIndex = -1;
+            const promptMessage = `چندین ترک زیرنویس در فایل یافت شد. لطفاً شماره ترک مورد نظر را وارد کنید:\n\n${streamOptions}`;
+            while (selectedIndex < 0 || selectedIndex >= subtitleStreams.length) {
+                const input = prompt(promptMessage);
+                if (input === null) { fileNameDisplay.innerHTML = ''; return; }
+                selectedIndex = parseInt(input, 10) - 1;
+                if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= subtitleStreams.length) {
+                    alert('انتخاب نامعتبر. لطفاً یک شماره صحیح از لیست وارد کنید.');
+                    selectedIndex = -1;
+                }
+            }
+
+            const selectedStream = subtitleStreams[selectedIndex];
+
+            if (selectedStream.codec_name === 'ass') {
+                isAssInput = true;
+                document.getElementById('output-format-selector').classList.remove('hidden');
+            }
+
+            uploadedFile = {
+                file: file,
+                streamIndex: selectedStream.index,
+                type: selectedStream.codec_name,
+                name: `${file.name.substring(0, file.name.lastIndexOf('.'))}.track${selectedStream.index}.${selectedStream.codec_name}`,
+                duration: parseFloat(parsedResult.format?.duration || 0)
+            };
+            const trackInfo = `[${selectedStream.tags?.language || 'unk'}] (فرمت: ${selectedStream.codec_name})`;
+            fileNameDisplay.innerHTML = `ترک انتخاب شده:<br><span class="filename-text">${trackInfo}</span>`;
             checkFormValidity();
 
-        } else if (supportedVideoFormats.some(ext => fileName.endsWith(ext))) {
-            if (isMobile() && !isFirefox()) {
-                alert("برای استخراج زیرنویس از فایل‌های ویدیویی (mkv, mp4) در موبایل، توصیه می‌شود از مرورگر Firefox استفاده کنید؛ چرا که سایر مرورگرها ممکن است از این قابلیت پشتیبانی نکنند.");
-            }
-
-            fileNameDisplay.innerHTML = `لطفاً کمی صبر کنید:<br><span class="filename-text">${file.name}</span>`;
-            translateBtn.disabled = true;
-
-            try {
-                const result = await runFFprobeCommand(file, ['/data/' + file.name, '-print_format', 'json', '-show_streams', '-show_format']);
-                const parsedResult = JSON.parse(result.stdout);
-                if (!parsedResult.streams || parsedResult.streams.length === 0) throw new Error('هیچ ترکی در فایل ویدیویی یافت نشد.');
-
-                const subtitleStreams = parsedResult.streams.filter(s => s.codec_type === 'subtitle' && (s.codec_name === 'subrip' || s.codec_name === 'ass'));
-                if (subtitleStreams.length === 0) {
-                    alert('هیچ ترک زیرنویس با فرمت SRT یا ASS در این فایل ویدیویی یافت نشد.');
-                    fileNameDisplay.innerHTML = '';
-                    return;
-                }
-
-                const streamOptions = subtitleStreams.map((s, index) => {
-                    const lang = s.tags?.language || 'unk';
-                    const title = s.tags?.title ? `(${s.tags.title})` : '';
-                    return `${index + 1}. [${lang}] ${s.codec_name} ${title}`.trim();
-                }).join('\n');
-                
-                let selectedIndex = -1;
-                const promptMessage = `چندین ترک زیرنویس در فایل یافت شد. لطفاً شماره ترک مورد نظر را وارد کنید:\n\n${streamOptions}`;
-                while (selectedIndex < 0 || selectedIndex >= subtitleStreams.length) {
-                    const input = prompt(promptMessage);
-                    if (input === null) { fileNameDisplay.innerHTML = ''; return; }
-                    selectedIndex = parseInt(input, 10) - 1;
-                    if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= subtitleStreams.length) {
-                        alert('انتخاب نامعتبر. لطفاً یک شماره صحیح از لیست وارد کنید.');
-                        selectedIndex = -1;
-                    }
-                }
-
-                const selectedStream = subtitleStreams[selectedIndex];
-
-                if (selectedStream.codec_name === 'ass') {
-                    const outputFilename = 'extracted.ass';
-                    const ffmpegResult = await runFFmpegCommand(file, 
-                        ['-i', '/data/' + file.name, '-map', `0:${selectedStream.index}`, '-codec', 'copy', outputFilename], 
-                        0, null
-                    );
-                    if (!ffmpegResult.files || ffmpegResult.files.length === 0) {
-                        throw new Error('استخراج ترک ASS ناموفق بود.');
-                    }
-                    const assFileBlob = new Blob([ffmpegResult.files[0].data], {type: 'text/plain'});
-                   
-                    await handleAssInput({ text: () => assFileBlob.text() });
-                }
-
-                uploadedFile = {
-                    file: file,
-                    streamIndex: selectedStream.index,
-                    type: selectedStream.codec_name,
-                    name: `${file.name.substring(0, file.name.lastIndexOf('.'))}.track${selectedStream.index}.${selectedStream.codec_name}`,
-                    duration: parseFloat(parsedResult.format?.duration || 0)
-                };
-                const trackInfo = `[${selectedStream.tags?.language || 'unk'}] (فرمت: ${selectedStream.codec_name})`;
-                fileNameDisplay.innerHTML = `ترک انتخاب شده:<br><span class="filename-text">${trackInfo}</span>`;
-                checkFormValidity();
-
-            } catch (error) {
-                console.error("Error processing video file:", error);
-                errorMessage.textContent = `خطا در تحلیل فایل ویدیویی: ${error.message}`;
-                errorDisplay.classList.remove('hidden');
-                fileNameDisplay.innerHTML = '';
-            }
-        } else {
-            alert('فرمت فایل پشتیبانی نمی‌شود. لطفاً یک فایل با فرمت .srt, .ass, .mkv, .mp4 انتخاب کنید.');
+        } catch (error) {
+            console.error("Error processing video file:", error);
+            errorMessage.textContent = `خطا در تحلیل فایل ویدیویی: ${error.message}`;
+            errorDisplay.classList.remove('hidden');
+            fileNameDisplay.innerHTML = '';
         }
+    } else {
+        alert('فرمت فایل پشتیبانی نمی‌شود. لطفاً یک فایل با فرمت .srt, .ass, .mkv, .mp4 انتخاب کنید.');
     }
+}
    async function handleFetchError(response) {
     // ابتدا کل پاسخ را به صورت متن می‌خوانیم
     const errorText = await response.text();
@@ -1282,207 +1273,219 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
 
 
-         translateBtn.addEventListener('click', async () => {
-        if (!uploadedFile || !apiKeyInput.value.trim()) return;
+       translateBtn.addEventListener('click', async () => {
+    if (!uploadedFile || !apiKeyInput.value.trim()) return;
 
-        progressSection.classList.remove('hidden');
-        downloadBtn.classList.add('hidden');
-        errorDisplay.classList.add('hidden');
-        translationStatusMessage.classList.add('hidden');
-        stopTranslationBtn.classList.remove('hidden');
-        stopTranslationBtn.disabled = false;
-        translateBtn.disabled = true;
-        liveOutput.textContent = 'در حال آماده سازی...';
-        translationStatusMessage.classList.remove('status-complete', 'status-incomplete', 'status-aborted');
-        abortController = new AbortController();
-        const signal = abortController.signal;
+    progressSection.classList.remove('hidden');
+    downloadBtn.classList.add('hidden');
+    errorDisplay.classList.add('hidden');
+    translationStatusMessage.classList.add('hidden');
+    stopTranslationBtn.classList.remove('hidden');
+    stopTranslationBtn.disabled = false;
+    translateBtn.disabled = true;
+    liveOutput.textContent = 'در حال آماده سازی...';
+    translationStatusMessage.classList.remove('status-complete', 'status-incomplete', 'status-aborted');
+    abortController = new AbortController();
+    const signal = abortController.signal;
 
-        clearInterval(thinkingPhaseTimer);
-        thinkingPhaseTimer = null;
-        
-        try {
-            const outputFormatChoice = document.querySelector('input[name="output-format"]:checked').value;
-            const useAssPath = isAssInput && outputFormatChoice === 'ass';
+    clearInterval(thinkingPhaseTimer);
+    thinkingPhaseTimer = null;
+    
+    try {
+        let rawSubtitleContent = '';
+        let outputFileNameBase = '';
 
-            let microDVDContent = '';
-            let assMapping = [];
-            let outputFileNameBase = '';
+        // --- فاز ۱: استخراج محتوا ---
+        // اگر فایل از ویدیو آمده باشد، الان زمان استخراج است
+        if (uploadedFile.streamIndex !== undefined) {
+            const videoFile = uploadedFile.file;
+            outputFileNameBase = videoFile.name.substring(0, videoFile.name.lastIndexOf('.'));
             
-            updateProgress(0, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
+            // نمایش نوار پیشرفت "فاز استخراج"
+            const onFfmpegProgress = (p) => {
+                updateProgress(p, 'مرحله ۱ از ۴: استخراج زیرنویس از فایل ویدیویی...');
+            };
 
-            if (useAssPath) {
-                outputFileNameBase = uploadedFile.name.substring(0, uploadedFile.name.lastIndexOf('.'));
-                const processResult = processAssForTranslationAndMapping(originalAssContent);
-                microDVDContent = processResult.microdvdForAI;
-                assMapping = processResult.map;
-                updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
-            } else {
-                let cleanSrtContent = '';
-                if (uploadedFile.streamIndex !== undefined) {
-                    const videoFile = uploadedFile.file;
-                    outputFileNameBase = videoFile.name.substring(0, videoFile.name.lastIndexOf('.'));
-                    const onFfmpegProgress = (p) => {
-                        updateProgress(p, 'مرحله ۱ از ۴: استخراج زیرنویس از فایل ویدیویی...');
-                    };
-                    const outputFormat = uploadedFile.type === 'subrip' ? 'srt' : 'ass';
-                    const outputFilename = `output.${outputFormat}`;
-                    const ffmpegResult = await runFFmpegCommand(videoFile,
-                        ['-i', '/data/' + videoFile.name, '-map', `0:${uploadedFile.streamIndex}`, '-codec', 'copy', outputFilename],
-                        uploadedFile.duration, onFfmpegProgress
-                    );
-                    if (!ffmpegResult.files || ffmpegResult.files.length === 0) throw new Error('استخراج زیرنویس از فایل ویدیویی ناموفق بود.');
-                    const rawSubtitleContent = await new Response(ffmpegResult.files[0].data).text();
-                    if (outputFormat === 'ass') {
-                        updateProgress(100, 'مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...');
-                        cleanSrtContent = cleanAssToSrt(rawSubtitleContent);
-                    } else {
-                        cleanSrtContent = sortSrtContent(rawSubtitleContent);
-                    }
-                } else {
-                    outputFileNameBase = uploadedFile.name.substring(0, uploadedFile.name.lastIndexOf('.'));
-                    const fileContent = await uploadedFile.text();
-                    if (uploadedFile.name.toLowerCase().endsWith('.ass')) {
-                        updateProgress(50, 'مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...');
-                        cleanSrtContent = cleanAssToSrt(fileContent);
-                    } else { 
-                         cleanSrtContent = sortSrtContent(fileContent);
-                    }
-                    updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
-                }
-                if (!cleanSrtContent || cleanSrtContent.trim() === '') {
-                     throw new Error("فایل زیرنویس پس از پردازش خالی است. ممکن است فرمت داخلی آن پشتیبانی نشود.");
-                }
-                microDVDContent = convertSrtToMicroDVD(cleanSrtContent);
+            const outputFormat = uploadedFile.type === 'subrip' ? 'srt' : 'ass';
+            const outputFilename = `output.${outputFormat}`;
+            const ffmpegResult = await runFFmpegCommand(videoFile,
+                ['-i', '/data/' + videoFile.name, '-map', `0:${uploadedFile.streamIndex}`, '-codec', 'copy', outputFilename],
+                uploadedFile.duration, onFfmpegProgress
+            );
+            if (!ffmpegResult.files || ffmpegResult.files.length === 0) throw new Error('استخراج زیرنویس از فایل ویدیویی ناموفق بود.');
+            
+            rawSubtitleContent = await new Response(ffmpegResult.files[0].data).text();
+
+            // اگر ترک استخراجی ASS بود، محتوای آن را برای مسیر ASS آماده می‌کنیم
+            if (uploadedFile.type === 'ass') {
+                originalAssContent = rawSubtitleContent;
             }
-            
-            if (!microDVDContent) throw new Error("فایل زیرنویس ورودی خالی است یا فرمت آن صحیح نیست.");
-            
-            originalMicroDVDLines = microDVDContent.split('\n').length;
-            const microDVDLines = microDVDContent.split('\n');
-            const lastOriginalLine = microDVDLines[microDVDLines.length - 1] || '';
-            const originalLineMatch = lastOriginalLine.match(/\{(\d+)\}\{(\d+)\}(.*)/);
-            originalLastEndFrame = originalLineMatch ? parseInt(originalLineMatch[2], 10) : 0;
-            
-            liveOutput.textContent = 'فایل پردازش شد. در حال آماده‌سازی برای آپلود...';
+        } else {
+            // اگر فایل مستقیم آپلود شده بود، محتوای آن را بخوان
+            rawSubtitleContent = await uploadedFile.text();
+            outputFileNameBase = uploadedFile.name.substring(0, uploadedFile.name.lastIndexOf('.'));
+        }
+        
+        // --- فاز ۲: پردازش محتوای استخراج شده ---
+        const outputFormatChoice = document.querySelector('input[name="output-format"]:checked').value;
+        const useAssPath = isAssInput && outputFormatChoice === 'ass';
 
-            const onUploadProgress = (p) => {
-                 updateProgress(p, 'مرحله ۲ از ۴: آپلود فایل زیرنویس به سرور گوگل...');
-            };
-            const fileUri = await uploadFileToGemini(microDVDContent, outputFileNameBase + '.txt', apiKeyInput.value.trim(), onUploadProgress);
-            
-            const thinkingStartTime = Date.now();
-            const baseThinkingText = 'مرحلهٔ تفکر هوش‌مصنوعی، اتمام فرایند ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید: ';
-            liveOutput.textContent = baseThinkingText + '0.0 s';
-            updateProgress(0, 'مرحله ۳ از ۴: هوش مصنوعی در حال تفکر است...');
+        let microDVDContent = '';
+        let assMapping = [];
+        
+        updateProgress(0, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
 
-            thinkingPhaseTimer = setInterval(() => {
-                const elapsedTime = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
-                liveOutput.textContent = baseThinkingText + `${elapsedTime} ثانیه`;
-            }, 100);
+        if (useAssPath) {
+            // `originalAssContent` در هر دو حالت (مستقیم یا ویدیو) آماده است
+            const processResult = processAssForTranslationAndMapping(originalAssContent);
+            microDVDContent = processResult.microdvdForAI;
+            assMapping = processResult.map;
+            updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
+        } else {
+            // مسیر SRT (یا ASS به SRT)
+            let cleanSrtContent = '';
+            const sourceIsAss = isAssInput || (uploadedFile.type === 'ass');
             
-            let isFirstChunk = true;
-            const onChunkReceived = (currentFullText) => {
-                if (isFirstChunk) {
-                    clearInterval(thinkingPhaseTimer);
-                    thinkingPhaseTimer = null;
-                    isFirstChunk = false;
-                    updateProgress(0, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
-                }
-                const translatedLines = currentFullText.split('\n');
-                liveOutput.textContent = translatedLines.map(line => (line.match(/\{(\d+)\}\{(\d+)\}(.*)/) || [])[3] || '').join('\n').replace(/\|/g, ' ');
-                liveOutput.scrollTop = liveOutput.scrollHeight;
-                const percentage = Math.min(99, Math.round((translatedLines.length / originalMicroDVDLines) * 100));
-                updateProgress(percentage, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
-            };
-            const onStreamEnd = (finalText) => {
+            if (sourceIsAss) {
+                updateProgress(50, 'مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...');
+                cleanSrtContent = cleanAssToSrt(rawSubtitleContent);
+            } else { 
+                 cleanSrtContent = sortSrtContent(rawSubtitleContent);
+            }
+            updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
+
+            if (!cleanSrtContent || cleanSrtContent.trim() === '') {
+                 throw new Error("فایل زیرنویس پس از پردازش خالی است. ممکن است فرمت داخلی آن پشتیبانی نشود.");
+            }
+            microDVDContent = convertSrtToMicroDVD(cleanSrtContent);
+        }
+        
+        if (!microDVDContent) throw new Error("فایل زیرنویس ورودی خالی است یا فرمت آن صحیح نیست.");
+        
+        originalMicroDVDLines = microDVDContent.split('\n').length;
+        const microDVDLines = microDVDContent.split('\n');
+        const lastOriginalLine = microDVDLines[microDVDLines.length - 1] || '';
+        const originalLineMatch = lastOriginalLine.match(/\{(\d+)\}\{(\d+)\}(.*)/);
+        originalLastEndFrame = originalLineMatch ? parseInt(originalLineMatch[2], 10) : 0;
+        
+        liveOutput.textContent = 'فایل پردازش شد. در حال آماده‌سازی برای آپلود...';
+
+        const onUploadProgress = (p) => {
+             updateProgress(p, 'مرحله ۲ از ۴: آپلود فایل زیرنویس به سرور گوگل...');
+        };
+        const fileUri = await uploadFileToGemini(microDVDContent, outputFileNameBase + '.txt', apiKeyInput.value.trim(), onUploadProgress);
+        
+        const thinkingStartTime = Date.now();
+        const baseThinkingText = 'مرحلهٔ تفکر هوش‌مصنوعی، اتمام فرایند ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید: ';
+        liveOutput.textContent = baseThinkingText + '0.0 s';
+        updateProgress(0, 'مرحله ۳ از ۴: هوش مصنوعی در حال تفکر است...');
+
+        thinkingPhaseTimer = setInterval(() => {
+            const elapsedTime = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
+            liveOutput.textContent = baseThinkingText + `${elapsedTime} ثانیه`;
+        }, 100);
+        
+        let isFirstChunk = true;
+        const onChunkReceived = (currentFullText) => {
+            if (isFirstChunk) {
                 clearInterval(thinkingPhaseTimer);
-                updateProgress(100, "ترجمه با موفقیت انجام شد!");
+                thinkingPhaseTimer = null;
+                isFirstChunk = false;
+                updateProgress(0, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
+            }
+            const translatedLines = currentFullText.split('\n');
+            liveOutput.textContent = translatedLines.map(line => (line.match(/\{(\d+)\}\{(\d+)\}(.*)/) || [])[3] || '').join('\n').replace(/\|/g, ' ');
+            liveOutput.scrollTop = liveOutput.scrollHeight;
+            const percentage = Math.min(99, Math.round((translatedLines.length / originalMicroDVDLines) * 100));
+            updateProgress(percentage, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
+        };
+        const onStreamEnd = (finalText) => {
+            clearInterval(thinkingPhaseTimer);
+            updateProgress(100, "ترجمه با موفقیت انجام شد!");
+            
+            if (useAssPath) {
+                const translationLookup = createTranslationLookupMap(finalText);
+                const rebuildResult = rebuildAssFromTranslation(originalAssContent, assMapping, translationLookup);
+                translatedAssContent = rebuildResult.rebuiltAss;
+                const untranslatedCount = rebuildResult.untranslatedCount;
+                const styleFailures = rebuildResult.styleReplacementFailureCount; 
                 
-                if (useAssPath) {
-                    const translationLookup = createTranslationLookupMap(finalText);
-                    const rebuildResult = rebuildAssFromTranslation(originalAssContent, assMapping, translationLookup);
-                    translatedAssContent = rebuildResult.rebuiltAss;
-                    const untranslatedCount = rebuildResult.untranslatedCount;
-                    // <<<<<<<<<< بازگرداندن شمارنده شکست >>>>>>>>>>
-                    const styleFailures = rebuildResult.styleReplacementFailureCount; 
-                    
-                    const isComplete = checkTranslationCompleteness(finalText, originalLastEndFrame);
+                const isComplete = checkTranslationCompleteness(finalText, originalLastEndFrame);
 
-                    let statusText = isComplete ? '✔️ ترجمه کامل است و استایل‌ها حفظ شده‌اند.' : '⚠️ ترجمه ممکن است ناقص باشد.';
-                    if (untranslatedCount > 0) {
-                        statusText += ` (توجه: ترجمه ${untranslatedCount} خط یافت نشد.)`;
-                    }
-                    // <<<<<<<<<< بازگرداندن گزارش شکست >>>>>>>>>>
-                    if (styleFailures > 0) {
-                        statusText += `<br><small>(هشدار: بازسازی ${styleFailures} خط با استایل بسیار پیچیده با روش جایگزین انجام شد.)</small>`;
-                    }
-
-                    translationStatusMessage.innerHTML = statusText;
-                    translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
-
-                } else {
-                    const mergeResult = mergeTrustedFramesWithAiText(microDVDContent, finalText);
-                    translatedMicroDVDContent = mergeResult.mergedText;
-                    const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
-                    let statusText = isComplete ? '✔️ ترجمه کامل است.' : '⚠️ ترجمه ممکن است ناقص باشد.';
-                    if (mergeResult.untranslatedCount > 0) {
-                        statusText += ` (توجه: ترجمه ${mergeResult.untranslatedCount} خط یافت نشد و از متن اصلی استفاده شد.)`;
-                    }
-                    translationStatusMessage.innerHTML = statusText;
-                    translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
+                let statusText = isComplete ? '✔️ ترجمه کامل است و استایل‌ها حفظ شده‌اند.' : '⚠️ ترجمه ممکن است ناقص باشد.';
+                if (untranslatedCount > 0) {
+                    statusText += ` (توجه: ترجمه ${untranslatedCount} خط یافت نشد.)`;
+                }
+                if (styleFailures > 0) {
+                    statusText += `<br><small>(هشدار: بازسازی ${styleFailures} خط با استایل بسیار پیچیده با روش جایگزین انجام شد.)</small>`;
                 }
 
-                translationStatusMessage.classList.remove('hidden');
-                downloadBtn.classList.remove('hidden');
-                translateBtn.disabled = false;
-                stopTranslationBtn.classList.add('hidden');
-            };
-            const onStreamError = (error) => { throw error; };
+                translationStatusMessage.innerHTML = statusText;
+                translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
 
-            await getTranslationStream(fileUri, onChunkReceived, onStreamEnd, onStreamError, signal);
+            } else {
+                const mergeResult = mergeTrustedFramesWithAiText(microDVDContent, finalText);
+                translatedMicroDVDContent = mergeResult.mergedText;
+                const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
+                let statusText = isComplete ? '✔️ ترجمه کامل است.' : '⚠️ ترجمه ممکن است ناقص باشد.';
+                if (mergeResult.untranslatedCount > 0) {
+                    statusText += ` (توجه: ترجمه ${mergeResult.untranslatedCount} خط یافت نشد و از متن اصلی استفاده شد.)`;
+                }
+                translationStatusMessage.innerHTML = statusText;
+                translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
+            }
 
-        } catch (error) {
-            clearInterval(thinkingPhaseTimer); 
-            console.error(error);
+            translationStatusMessage.classList.remove('hidden');
+            downloadBtn.classList.remove('hidden');
             translateBtn.disabled = false;
             stopTranslationBtn.classList.add('hidden');
-            downloadBtn.classList.add('hidden');
-            progressTitle.textContent = 'خطا در ترجمه!';
-            progressBarFill.style.width = '0%';
-            progressText.textContent = '۰٪';
-            liveOutput.textContent = '';
-            translationStatusMessage.classList.remove('hidden', 'status-complete');
-            translationStatusMessage.classList.add('status-incomplete', 'status-aborted');
+        };
+        const onStreamError = (error) => { throw error; };
 
-            let userFriendlyMessage = '';
-            const errorMessageText = error.message || 'خطایی نامشخص رخ داد.';
+        await getTranslationStream(fileUri, onChunkReceived, onStreamEnd, onStreamError, signal);
 
-            if (error.name === 'AbortError') {
-                userFriendlyMessage = '<p>عملیات ترجمه توسط کاربر متوقف شد.</p>';
-                translationStatusMessage.innerHTML = '❌ ترجمه توسط کاربر متوقف شد.';
-            } else if (errorMessageText.toLowerCase().includes('location') || errorMessageText.toLowerCase().includes('permission denied')) {
-                userFriendlyMessage = `<p class="error-subtitle"><b>خطا در دسترسی (مشکل تحریم یا فیلترشکن).</b></p><pre>${errorMessageText}</pre><p>این خطا به این معنی است که سرورهای گوگل به دلیل موقعیت جغرافیایی شما، اجازه دسترسی نمی‌دهند.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از روشن و فعال بودن <b>فیلترشکن قوی</b> خود اطمینان حاصل کنید.</li><li>اگر فیلترشکن شما روشن است اما همچنان این خطا را می‌بینید، لطفاً <b>فیلترشکن خود را تغییر دهید</b> یا از یک سرور دیگر در آن استفاده کنید.</li></ol>`;
-                translationStatusMessage.innerHTML = '❌ خطای دسترسی/فیلترشکن.';
-            } else if (errorMessageText.toLowerCase().includes('networkerror')) {
-                userFriendlyMessage = `<p class="error-subtitle"><b>خطای شبکه (NetworkError).</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً به دلیل ناپایداری اتصال اینترنت یا فیلترشکن شما رخ می‌دهد.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از اتصال پایدار اینترنت خود مطمئن شوید.</li><li>فیلترشکن خود را یک بار قطع و وصل کرده یا از یک سرور/فیلترشکن دیگر که پایدارتر است، استفاده کنید.</li></ol>`;
-                translationStatusMessage.innerHTML = '❌ خطای شبکه.';
-            } else if (errorMessageText.toLowerCase().includes('overloaded') || errorMessageText.includes('503')) {
-                userFriendlyMessage = `<p class="error-subtitle"><b>خطای موقتی از سوی سرور گوگل (Overloaded)</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً به دلیل ترافیک بسیار بالای لحظه‌ای روی سرورهای گوگل رخ می‌دهد.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>چند دقیقه صبر کرده و دوباره امتحان کنید.</li><li>اگر مشکل تکرار شد، ممکن است به دلیل پیچیدگی خاص فایل شما باشد. لطفاً فایل زیرنویس را به صورت دستی (با نرم‌افزار Subtitle Edit) به فرمت <b>.srt</b> تبدیل کرده و سپس آن را در برنامه انتخاب کنید.</li></ol>`;
-                translationStatusMessage.innerHTML = '❌ خطای موقتی سرور.';
-            } else if (proxyToggle.checked && errorMessageText.toLowerCase().includes('stream')) {
-                userFriendlyMessage = `<p class="error-subtitle"><b>خطای دریافت ترجمه از پراکسی (Stream Error).</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً زمانی رخ می‌دهد که پراکسی فعال است و ارتباط شما با آن به دلیل ناپایداری اینترنت یا فیلترشکن دچار اختلال می‌شود.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از اتصال پایدار اینترنت خود مطمئن شوید.</li><li>اگر از فیلترشکن همزمان با پراکسی استفاده می‌کنید، آن را موقتاً خاموش کرده و دوباره امتحان کنید (پراکسی خودش کار فیلترشکن را انجام می‌دهد).</li><li>اگر مشکل ادامه داشت، چند دقیقه بعد دوباره امتحان کنید.</li></ol>`;
-                translationStatusMessage.innerHTML = '❌ خطای پراکسی/استریم.';
-            } else if (errorMessageText.toLowerCase().includes('api key not valid')) {
-                userFriendlyMessage = `<p class="error-subtitle"><b>کلید API نامعتبر است.</b></p><pre>${errorMessageText}</pre><p>لطفاً مطمئن شوید که کلید API را به درستی از <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> کپی کرده و در کادر مربوطه وارد کرده‌اید.</p><p>همچنین به یاد داشته باشید که فیلترشکن شما باید در تمام مراحل روشن باشد.</p>`;
-                translationStatusMessage.innerHTML = '❌ کلید API نامعتبر.';
-            } else {
-                userFriendlyMessage = `<b>یک خطای پیش‌بینی‌نشده رخ داد:</b><pre>${errorMessageText}</pre>`;
-                translationStatusMessage.innerHTML = '❌ خطایی در ترجمه رخ داد.';
-            }
-            errorMessage.innerHTML = userFriendlyMessage;
-            errorDisplay.classList.remove('hidden');
+    } catch (error) {
+        clearInterval(thinkingPhaseTimer); 
+        console.error(error);
+        translateBtn.disabled = false;
+        stopTranslationBtn.classList.add('hidden');
+        downloadBtn.classList.add('hidden');
+        progressTitle.textContent = 'خطا در ترجمه!';
+        progressBarFill.style.width = '0%';
+        progressText.textContent = '۰٪';
+        liveOutput.textContent = '';
+        translationStatusMessage.classList.remove('hidden', 'status-complete');
+        translationStatusMessage.classList.add('status-incomplete', 'status-aborted');
+
+        let userFriendlyMessage = '';
+        const errorMessageText = error.message || 'خطایی نامشخص رخ داد.';
+
+        if (error.name === 'AbortError') {
+            userFriendlyMessage = '<p>عملیات ترجمه توسط کاربر متوقف شد.</p>';
+            translationStatusMessage.innerHTML = '❌ ترجمه توسط کاربر متوقف شد.';
+        } else if (errorMessageText.toLowerCase().includes('location') || errorMessageText.toLowerCase().includes('permission denied')) {
+            userFriendlyMessage = `<p class="error-subtitle"><b>خطا در دسترسی (مشکل تحریم یا فیلترشکن).</b></p><pre>${errorMessageText}</pre><p>این خطا به این معنی است که سرورهای گوگل به دلیل موقعیت جغرافیایی شما، اجازه دسترسی نمی‌دهند.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از روشن و فعال بودن <b>فیلترشکن قوی</b> خود اطمینان حاصل کنید.</li><li>اگر فیلترشکن شما روشن است اما همچنان این خطا را می‌بینید، لطفاً <b>فیلترشکن خود را تغییر دهید</b> یا از یک سرور دیگر در آن استفاده کنید.</li></ol>`;
+            translationStatusMessage.innerHTML = '❌ خطای دسترسی/فیلترشکن.';
+        } else if (errorMessageText.toLowerCase().includes('networkerror')) {
+            userFriendlyMessage = `<p class="error-subtitle"><b>خطای شبکه (NetworkError).</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً به دلیل ناپایداری اتصال اینترنت یا فیلترشکن شما رخ می‌دهد.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از اتصال پایدار اینترنت خود مطمئن شوید.</li><li>فیلترشکن خود را یک بار قطع و وصل کرده یا از یک سرور/فیلترشکن دیگر که پایدارتر است، استفاده کنید.</li></ol>`;
+            translationStatusMessage.innerHTML = '❌ خطای شبکه.';
+        } else if (errorMessageText.toLowerCase().includes('overloaded') || errorMessageText.includes('503')) {
+            userFriendlyMessage = `<p class="error-subtitle"><b>خطای موقتی از سوی سرور گوگل (Overloaded)</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً به دلیل ترافیک بسیار بالای لحظه‌ای روی سرورهای گوگل رخ می‌دهد.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>چند دقیقه صبر کرده و دوباره امتحان کنید.</li><li>اگر مشکل تکرار شد، ممکن است به دلیل پیچیدگی خاص فایل شما باشد. لطفاً فایل زیرنویس را به صورت دستی (با نرم‌افزار Subtitle Edit) به فرمت <b>.srt</b> تبدیل کرده و سپس آن را در برنامه انتخاب کنید.</li></ol>`;
+            translationStatusMessage.innerHTML = '❌ خطای موقتی سرور.';
+        } else if (proxyToggle.checked && errorMessageText.toLowerCase().includes('stream')) {
+            userFriendlyMessage = `<p class="error-subtitle"><b>خطای دریافت ترجمه از پراکسی (Stream Error).</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً زمانی رخ می‌دهد که پراکسی فعال است و ارتباط شما با آن به دلیل ناپایداری اینترنت یا فیلترشکن دچار اختلال می‌شود.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از اتصال پایدار اینترنت خود مطمئن شوید.</li><li>اگر از فیلترشکن همزمان با پراکسی استفاده می‌کنید، آن را موقتاً خاموش کرده و دوباره امتحان کنید (پراکسی خودش کار فیلترشکن را انجام می‌دهد).</li><li>اگر مشکل ادامه داشت، چند دقیقه بعد دوباره امتحان کنید.</li></ol>`;
+            translationStatusMessage.innerHTML = '❌ خطای پراکسی/استریم.';
+        } else if (errorMessageText.toLowerCase().includes('api key not valid')) {
+            userFriendlyMessage = `<p class="error-subtitle"><b>کلید API نامعتبر است.</b></p><pre>${errorMessageText}</pre><p>لطفاً مطمئن شوید که کلید API را به درستی از <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> کپی کرده و در کادر مربوطه وارد کرده‌اید.</p><p>همچنین به یاد داشته باشید که فیلترشکن شما باید در تمام مراحل روشن باشد.</p>`;
+            translationStatusMessage.innerHTML = '❌ کلید API نامعتبر.';
+        } else {
+            userFriendlyMessage = `<b>یک خطای پیش‌بینی‌نشده رخ داد:</b><pre>${errorMessageText}</pre>`;
+            translationStatusMessage.innerHTML = '❌ خطایی در ترجمه رخ داد.';
         }
-    });
+        errorMessage.innerHTML = userFriendlyMessage;
+        errorDisplay.classList.remove('hidden');
+    }
+});
 
 
     stopTranslationBtn.addEventListener('click', () => {
