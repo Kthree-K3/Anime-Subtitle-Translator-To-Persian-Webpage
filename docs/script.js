@@ -301,8 +301,6 @@ function sortSrtContent(srtContent) {
 
 // === START: تابع نهایی با روش استخراج متن اصلاح شده و فیلترهای شما ===
 function cleanAssToSrt(assContent) {
-
-    // توابع کمکی برای مدیریت زمان (بدون تغییر)
     function assTimeToMS(timeStr) {
         if (!timeStr) return 0;
         const parts = timeStr.split(/[:.]/);
@@ -324,41 +322,45 @@ function cleanAssToSrt(assContent) {
 
     const lines = assContent.split('\n');
     const dialogues = [];
+    
+    // --- START: فیلتر جدید نقاشی ---
+    const drawingCommandRegex = /^\s*(m|l|b|s|p|c)\s+\d/i; // برای تشخیص شروع دستور نقاشی
+    const nonCommandLettersRegex = /[a-gi-k-z]/gi; // برای پیدا کردن حروف الفبای غیر دستوری
+    // --- END: فیلتر جدید نقاشی ---
 
     for (const line of lines) {
         const trimmedLine = line.trim();
 
         if (trimmedLine.startsWith('Dialogue:')) {
-            // --- شروع روش جدید و بسیار قوی برای استخراج متن ---
             const parts = trimmedLine.split(',');
-            if (parts.length < 10) continue; // خط ناقص است و آن را نادیده می‌گیریم
+            if (parts.length < 10) continue;
 
             const startTimeStr = parts[1];
             const endTimeStr = parts[2];
-            // متن اصلی از فیلد دهم (ایندکس ۹) به بعد شروع می‌شود.
-            // با slice(9) تمام بخش‌های متن را گرفته و با کاما دوباره به هم می‌چسبانیم.
-            // این کار باعث می‌شود کاماهای داخل متن اصلی حفظ شوند.
             const rawText = parts.slice(9).join(',');
-            // --- پایان روش جدید ---
             
-            // --- شروع قیف فیلتر با ترتیب صحیح درخواستی شما ---
+            // ۱. حذف تگ‌ها برای تحلیل متن
+            const textWithoutTags = rawText.replace(/\{[^}]*\}/g, '').trim();
 
-            // فیلتر ۱ (بالاترین اولویت): حذف خطوط طراحی
+            // فیلتر ۱: حذف خطوط طراحی {\p0}
             if (rawText.trim().endsWith('{\\p0}')) {
                 continue;
             }
 
+            // --- START: اعمال فیلتر جدید نقاشی ---
+            const isDrawingCommand = drawingCommandRegex.test(textWithoutTags);
+            const otherLetters = textWithoutTags.match(nonCommandLettersRegex);
+           if (isDrawingCommand) {
+    continue;
+}
+            // --- END: اعمال فیلتر ---
+
             // فیلتر ۲: حذف خطوط کارائوکه تک‌حرفی
-            const textWithoutTags = rawText.replace(/\{[^}]*\}/g, '').trim();
             if (rawText.includes('{') && textWithoutTags.length === 1) {
                 continue;
             }
             
-            // --- پایان قیف فیلتر ---
-            
-            // پاکسازی نهایی برای دیالوگ‌های معتبر
-            // از textWithoutTags که قبلا محاسبه شده استفاده می‌کنیم و فقط \N را جایگزین می‌کنیم.
-              const cleanedText = textWithoutTags.replace(/\\h/g, ' ').replace(/\\n/g, '\r\n').replace(/\\N/g, '\r\n');
+            const cleanedText = textWithoutTags.replace(/\\h/g, ' ').replace(/\\n/g, '\r\n').replace(/\\N/g, '\r\n');
 
             if (cleanedText) {
                 dialogues.push({
@@ -370,7 +372,6 @@ function cleanAssToSrt(assContent) {
         }
     }
 
-    // مرتب‌سازی و ساخت خروجی نهایی (بدون تغییر)
     dialogues.sort((a, b) => a.start - b.start);
 
     let srtOutput = '';
@@ -428,6 +429,9 @@ function processAssForTranslationAndMapping(assContent, fps = 23.976) {
         return Math.floor((ms / 1000) * fps);
     }
     
+    const drawingCommandRegex = /^\s*(m|l|b|s|p|c)\s+\d/i;
+    const nonCommandLettersRegex = /[a-gi-k-z]/gi;
+
     lines.forEach((line, index) => {
         const trimmedLine = line.trim();
         if (trimmedLine.startsWith('Dialogue:')) {
@@ -436,20 +440,27 @@ function processAssForTranslationAndMapping(assContent, fps = 23.976) {
 
             const dialoguePart = parts.slice(9).join(',');
             
-            const textWithoutAnyTags = dialoguePart.replace(/\{[^}]*\}/g, '');
+            // <<<<<<<<<<< اینجا نقطه اصلاح شده اصلی است >>>>>>>>>>
+            const textWithoutTags = dialoguePart.replace(/\{[^}]*\}/g, '').trim();
+
             if (dialoguePart.trim().endsWith('{\\p0}')) return;
-            if (dialoguePart.includes('{') && textWithoutAnyTags.trim().replace(/\\N/g, '').replace(/\\h/g, '').length <= 1 && textWithoutAnyTags.trim().length > 0) return;
+
+            const isDrawingCommand = drawingCommandRegex.test(textWithoutTags);
+            const otherLetters = textWithoutTags.match(nonCommandLettersRegex);
+            if (isDrawingCommand) {
+    return;
+}
+
+            if (dialoguePart.includes('{') && textWithoutTags.replace(/\\N/g, '').replace(/\\h/g, '').length <= 1 && textWithoutTags.length > 0) return;
 
             let textForAI = '';
             let isComplex = false;
             let segmentsForRemapping = null;
-
-            // --- START: معماری دو مسیره صحیح ---
-            // شبیه‌سازی دقیق منطق شکست در نسخه پایدار
+            
+            // <<<<<<<<<<< اینجا هم از textWithoutTags استفاده می‌شود >>>>>>>>>>
             const dialogueWithoutItalics = dialoguePart.replace(/\{\\i1\}/g, '').replace(/\{\\i0\}/g, '');
-            const originalTextOnly = dialogueWithoutItalics.replace(/\{[^}]*\}/g, ''); // بدون پردازش \N و \h
+            const originalTextOnly = dialogueWithoutItalics.replace(/\{[^}]*\}/g, '');
 
-            // اگر جایگزینی ساده شکست می‌خورد، این خط پیچیده است
             if (dialogueWithoutItalics.replace(originalTextOnly, '') === dialogueWithoutItalics && originalTextOnly.trim() !== '') {
                 isComplex = true;
                 segmentsForRemapping = [];
@@ -467,11 +478,10 @@ function processAssForTranslationAndMapping(assContent, fps = 23.976) {
                 });
                 textForAI = textForAI.trim();
             } else {
-                // مسیر استاندارد (۹۵٪ موارد)
                 isComplex = false;
-                textForAI = textWithoutAnyTags.replace(/\\N/g, '|').replace(/\\h/g, ' ');
+                // <<<<<<<<<<< اینجا هم textWithoutTags استفاده می‌شود >>>>>>>>>>
+                textForAI = textWithoutTags.replace(/\\N/g, '|').replace(/\\h/g, ' ');
             }
-            // --- END: معماری دو مسیره ---
 
             if (textForAI.trim()) {
                 const startTimeMs = assTimeToMS(parts[1]);
