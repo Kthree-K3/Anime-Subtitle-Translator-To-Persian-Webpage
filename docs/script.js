@@ -1511,7 +1511,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             finalContent = await finalizeAssFile(translatedAssContent);
             // --- END: فراخوانی تابع نهایی‌سازی ---
             fileExtension = 'fa.ass';
-            mimeType = 'text/plain;charset=utf-8';
+            mimeType = 'application/x-ass;charset=utf-8';
         } else {
             if (!translatedMicroDVDContent) return;
             finalContent = convertMicroDVDtoSrt(translatedMicroDVDContent);
@@ -1562,4 +1562,5 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
    
 });
+
 
