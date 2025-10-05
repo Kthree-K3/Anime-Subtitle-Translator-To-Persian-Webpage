@@ -6,7 +6,9 @@
 
 این ابزار، نسخه بهبودیافته و توسعه‌داده‌شده بر پایه [پروژه اولیه Anime-Subtitle-Translator-To-Persian](https://github.com/Kthree-K3/Anime-Subtitle-Translator-To-Persian) است که با افزودن قابلیت‌های کلیدی جدید، کنترل و انعطاف‌پذیری بی‌نظیری را در اختیار مترجمان و علاقه‌مندان به انیمه قرار می‌دهد.
 
-[**🚀 مشاهده نسخه زنده (Live Demo) 🚀**](https://kthree-k3.github.io/Anime-Subtitle-Translator-To-Persian-Webpage/)
+### <a href="https://kthree-k3.github.io/Anime-Subtitle-Translator-To-Persian-Webpage">🔗 **🚀 مشاهده نسخه زنده (Live Demo) 🚀**</a>
+
+
 
 
 
