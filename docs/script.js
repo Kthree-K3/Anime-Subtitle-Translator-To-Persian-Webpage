@@ -879,6 +879,10 @@ async function finalizeAssFile(assContent) {
     errorDisplay.classList.add('hidden');
     isAssInput = false;
     originalAssContent = '';
+    progressSection.classList.add('hidden'); 
+    liveOutput.textContent = '';
+    downloadBtn.classList.add('hidden');
+    translationStatusMessage.classList.add('hidden');
     document.getElementById('output-format-selector').classList.add('hidden');
     checkFormValidity();
     // --- END: Reset states ---
@@ -1562,6 +1566,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
    
 });
+
 
 
 
