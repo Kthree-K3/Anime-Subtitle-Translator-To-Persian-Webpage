@@ -872,25 +872,16 @@ async function finalizeAssFile(assContent) {
     //  توابع  برای مدیریت تنظیمات ایمنی
     
     function checkFormValidity() { translateBtn.disabled = !(uploadedFile && apiKeyInput.value.trim() !== ''); }
-  async function handleFileSelect(file) {
-  
+   async function handleFileSelect(file) {
+    // --- START: Reset states for new file ---
     uploadedFile = null;
     fileNameDisplay.innerHTML = '';
+    errorDisplay.classList.add('hidden');
     isAssInput = false;
     originalAssContent = '';
-
-   
-    // مخفی کردن تمام عناصر مربوط به نتیجه ترجمه قبلی
-    progressSection.classList.add('hidden');
-    liveOutput.textContent = ''; // پاک کردن متن خروجی زنده
-    downloadBtn.classList.add('hidden');
-    translationStatusMessage.classList.add('hidden');
-    errorDisplay.classList.add('hidden');
-
-
     document.getElementById('output-format-selector').classList.add('hidden');
     checkFormValidity();
-   
+    // --- END: Reset states ---
 
     if (!file) return;
 
@@ -924,7 +915,7 @@ async function finalizeAssFile(assContent) {
         translateBtn.disabled = true;
 
         try {
-            const result = await runFFprobeCommand(file, ['/data/' ' + file.name, '-print_format', 'json', '-show_streams', '-show_format']);
+            const result = await runFFprobeCommand(file, ['/data/' + file.name, '-print_format', 'json', '-show_streams', '-show_format']);
             const parsedResult = JSON.parse(result.stdout);
             if (!parsedResult.streams || parsedResult.streams.length === 0) throw new Error('هیچ ترکی در فایل ویدیویی یافت نشد.');
 
@@ -980,7 +971,7 @@ async function finalizeAssFile(assContent) {
     } else {
         alert('فرمت فایل پشتیبانی نمی‌شود. لطفاً یک فایل با فرمت .srt, .ass, .mkv, .mp4 انتخاب کنید.');
     }
-  }
+}
    async function handleFetchError(response) {
     // ابتدا کل پاسخ را به صورت متن می‌خوانیم
     const errorText = await response.text();
@@ -1571,7 +1562,6 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
    
 });
-
 
 
 
