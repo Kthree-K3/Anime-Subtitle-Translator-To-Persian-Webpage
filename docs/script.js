@@ -1477,8 +1477,8 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         } else if (errorMessageText.toLowerCase().includes('overloaded') || errorMessageText.includes('503')) {
             userFriendlyMessage = `<p class="error-subtitle"><b>خطای موقتی از سوی سرور گوگل (Overloaded)</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً به دلیل ترافیک بسیار بالای لحظه‌ای روی سرورهای گوگل رخ می‌دهد.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>چند دقیقه صبر کرده و دوباره امتحان کنید.</li><li>اگر مشکل تکرار شد، ممکن است به دلیل پیچیدگی خاص فایل شما باشد. لطفاً فایل زیرنویس را به صورت دستی (با نرم‌افزار Subtitle Edit) به فرمت <b>.srt</b> تبدیل کرده و سپس آن را در برنامه انتخاب کنید.</li></ol>`;
             translationStatusMessage.innerHTML = '❌ خطای موقتی سرور.';
-        } else if (proxyToggle.checked && errorMessageText.toLowerCase().includes('stream')) {
-            userFriendlyMessage = `<p class="error-subtitle"><b>خطای دریافت ترجمه از پراکسی (Stream Error).</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً زمانی رخ می‌دهد که پراکسی فعال است و ارتباط شما با آن به دلیل ناپایداری اینترنت یا فیلترشکن دچار اختلال می‌شود.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از اتصال پایدار اینترنت خود مطمئن شوید.</li><li>اگر از فیلترشکن همزمان با پراکسی استفاده می‌کنید، آن را موقتاً خاموش کرده و دوباره امتحان کنید (پراکسی خودش کار فیلترشکن را انجام می‌دهد).</li><li>اگر مشکل ادامه داشت، چند دقیقه بعد دوباره امتحان کنید.</li></ol>`;
+        } else if (errorMessageText.toLowerCase().includes('stream')) {
+            userFriendlyMessage = `<p class="error-subtitle"><b>خطای دریافت ترجمه از پراکسی (Stream Error).</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً زمانی رخ می‌دهد که پراکسی فعال است و ارتباط شما با آن به دلیل ناپایداری اینترنت یا فیلترشکن دچار اختلال می‌شود.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از اتصال پایدار اینترنت خود مطمئن شوید.</li><li>اگر از فیلترشکن همزمان با پراکسی استفاده می‌کنید، آن را موقتاً خاموش کرده و دوباره امتحان کنید (پراکسی خودش کار فیلترشکن را انجام می‌دهد).</li><li>اگر مشکل ادامه داشت، احتمالاً مشکل از سرورهای هوش مصنوعی است، چند دقیقه صبر کنید و بعد دوباره امتحان کنید.</li></ol>`;
             translationStatusMessage.innerHTML = '❌ خطای پراکسی/استریم.';
         } else if (errorMessageText.toLowerCase().includes('api key not valid')) {
             userFriendlyMessage = `<p class="error-subtitle"><b>کلید API نامعتبر است.</b></p><pre>${errorMessageText}</pre><p>لطفاً مطمئن شوید که کلید API را به درستی از <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> کپی کرده و در کادر مربوطه وارد کرده‌اید.</p><p>همچنین به یاد داشته باشید که فیلترشکن شما باید در تمام مراحل روشن باشد.</p>`;
@@ -1566,6 +1566,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
    
 });
+
 
 
 
