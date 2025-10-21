@@ -879,4 +879,46 @@ hr.footer-hr {
     cursor: pointer;
 }
 
-/* === END: استایل‌های جدید === */
+
+/* کلاس جدید برای Tooltip های حاوی ویدیو */
+.video-tooltip {
+    width: 420px; /* کمی پهن‌تر از ویدیو برای حاشیه */
+    padding: 10px; /* فاصله داخلی */
+    background-color: #1a1a1a; /* پس‌زمینه تیره‌تر برای تمرکز روی ویدیو */
+    border: 2px solid var(--accent-color); /* حاشیه با رنگ اصلی */
+    bottom: 120%; /* کمی بالاتر برای جلوگیری از همپوشانی */
+}
+
+/* اطمینان از اینکه ویدیو تمام عرض Tooltip را می‌گیرد و گوشه‌های گرد دارد */
+.video-tooltip video {
+    display: block;
+    max-width: 100%;
+    border-radius: 6px;
+}
+
+/* تنظیم مجدد استایل فلش برای Tooltip جدید */
+.video-tooltip::after {
+    border-color: var(--accent-color) transparent transparent transparent;
+}
+
+
+.help-icon svg {
+    width: 14px;  /* کمی کوچک‌تر از عرض والد (20px) */
+    height: 14px; /* کمی کوچک‌تر از ارتفاع والد (20px) */
+}
+
+
+
+/* 1. بزرگ کردن دایره خاکستری فقط در بخش API Key */
+#api-key-section .help-icon {
+    width: 30px;
+    height: 30px;
+}
+
+/* 2. بزرگ کردن خود آیکون دوربین فقط در بخش API Key */
+#api-key-section .help-icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+/* === END: استایل اختصاصی === */
