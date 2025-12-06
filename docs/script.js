@@ -1434,7 +1434,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                 const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
                 let statusText = isComplete ? '✔️ ترجمه کامل است.' : '⚠️ ترجمه ممکن است ناقص باشد.';
                 if (mergeResult.untranslatedCount > 0) {
-                    statusText += ` (توجه: ترجمه ${mergeResult.untranslatedCount} خط یافت نشد و از متن اصلی استفاده شد.)`;
+                    statusText += ` (توجه: ترجمه ${mergeResult.untranslatedCount} خط یافت نشد.)`;
                 }
                 translationStatusMessage.innerHTML = statusText;
                 translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
@@ -1566,6 +1566,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
    
 });
+
 
 
 
