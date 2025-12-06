@@ -735,7 +735,7 @@ async function finalizeAssFile(assContent) {
         // Regex برای پیدا کردن و حذف تگ \fn
         const fnTagRegex = /\\fn[^\\}]+/g;
         // Regex جدید شما برای پیدا کردن و حذف تگ \fsp
-        const fspTagRegex = /\\fsp-?\d+/g;
+        const fspTagRegex = /\\fsp\s*-?(?:\d+(\.\d*)?|\.\d+)/g;
 
         for (const line of lines) {
             let currentLine = line;
@@ -764,7 +764,7 @@ async function finalizeAssFile(assContent) {
                 // ۱. حذف تگ \fn از داخل خط دیالوگ
                 currentLine = line.replace(fnTagRegex, '');
                 // ۲. حذف تگ \fsp از داخل خط دیالوگ
-                currentLine = currentLine.replace(fspTagRegex, '');
+                currentLine = currentLine.replace(fspTagRegex, '\\fsp');
                 // --- END: اعمال هر دو قانون ---
             } else if (inFontsSection) {
                 // تمام خطوط داخل بخش فونت قدیمی را نادیده می‌گیریм
@@ -1566,6 +1566,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
    
 });
+
 
 
 
