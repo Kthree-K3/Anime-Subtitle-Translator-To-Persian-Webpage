@@ -813,8 +813,14 @@ async function finalizeAssFile(assContent) {
         });
     }
     function saveModels() { localStorage.setItem('userModels', JSON.stringify(models)); localStorage.setItem('selectedModel', selectedModelApiName); }
-    function loadModels() { const savedModels = localStorage.getItem('userModels'); const savedSelected = localStorage.getItem('selectedModel'); models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [{ displayName: 'Gemini 2.5 Pro', apiName: 'gemini-2.5-pro' }]; selectedModelApiName = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; renderModels(); }
-    function selectModel(apiName) { selectedModelApiName = apiName; saveModels(); renderModels(); }
+    function loadModels() { const savedModels = localStorage.getItem('userModels'); const savedSelected = localStorage.getItem('selectedModel'); models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [
+            // --- مدل جدید که می‌خواهید پیش‌فرض باشد (اولی) ---
+            { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' },
+            
+            // --- مدل‌های قبلی ---
+            { displayName: 'Gemini 2.5 Pro', apiName: 'gemini-2.5-pro' }
+        ];  selectedModelApiName = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; renderModels(); }
+    function selectModel(apiName) { selectedModelApiName = apiName; saveModels(); renderModels(); }
     function addModel() { const displayName = prompt("یک نام نمایشی برای مدل وارد کنید (مثلا: Gemini Flash):"); if (!displayName) return; const apiName = prompt("نام دقیق API مدل را وارد کنید (مثلا: gemini-1.5-flash-latest):"); if (!apiName) return; if (models.some(m => m.apiName === apiName)) return alert("این مدل از قبل وجود دارد."); models.push({ displayName, apiName }); selectModel(apiName); }
     function deleteModel(index) { if (!confirm(`آیا از حذف مدل "${models[index].displayName}" مطمئن هستید؟`)) return; const deletedModelWasSelected = models[index].apiName === selectedModelApiName; models.splice(index, 1); if (deletedModelWasSelected && models.length > 0) { selectModel(models[0].apiName); } else { saveModels(); renderModels(); } }
 
@@ -1566,6 +1572,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
    
 });
+
 
 
 
