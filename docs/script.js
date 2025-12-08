@@ -65,10 +65,8 @@ proxyToggle.addEventListener('change', () => {
 
 
     // --- 2. ثابت‌ها و متغیرهای اصلی ---
-    let microDVDContent = '';
-    let assMapping = [];
-   let originalAssContent = ''; 
-    let isAssInput = false;
+    
+   
 const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.workers.dev'; 
     // IMPORTANT: DO NOT MODIFY THIS PROMPT. IT IS HIGHLY OPTIMIZED.
     const DEFAULT_PROMPT = `پرامپت پیشرفته و یکپارچه برای ترجمه حرفه‌ای زیرنویس انیمه (فرمت 'میکرو دی وی دی') 
@@ -135,8 +133,7 @@ const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.workers.dev';
 3.  عدم وجود اطلاعات اضافی در بلوک کد: هیچ‌گونه توضیح، مقدمه، تفسیر، یادداشت مترجم یا هرگونه متن اضافی دیگری نباید *درون* این بلوک کد قرار گیرد.
 
 تأکید نهایی:
-شما باید تمامی این دستورالعمل‌ها را با دقت مرور کرده و اطمینان حاصل کنید که خروجی شما دقیقاً مطابق با موارد ذکر شده است. هدف، ارائه یک ترجمه حرفه‌ای و بی‌نقص است که نیازی به ویرایش مجدد نداشته باشد.
-لطفاً خروجی نهایی را داخل یک کد بلاک قرار بده.`;
+شما باید تمامی این دستورالعمل‌ها را با دقت مرور کرده و اطمینان حاصل کنید که خروجی شما دقیقاً مطابق با موارد ذکر شده است. هدف، ارائه یک ترجمه حرفه‌ای و بی‌نقص است که نیازی به ویرایش مجدد نداشته باشد.`;
 
     let uploadedFile = null;
     let translatedMicroDVDContent = '';
@@ -699,7 +696,7 @@ function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
 
 async function incrementCounter(slug) {
     try {
-             //  await fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/${slug}/up`);
+               await fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/${slug}/up`);
     } catch (error) {
         console.error(`Could not increment ${slug} counter:`, error);
     }
@@ -816,13 +813,7 @@ async function finalizeAssFile(assContent) {
         });
     }
     function saveModels() { localStorage.setItem('userModels', JSON.stringify(models)); localStorage.setItem('selectedModel', selectedModelApiName); }
-    function loadModels() { const savedModels = localStorage.getItem('userModels'); const savedSelected = localStorage.getItem('selectedModel'); models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [
-            // --- مدل جدید که می‌خواهید پیش‌فرض باشد (اولی) ---
-            { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' },
-            
-            // --- مدل‌های قبلی ---
-            { displayName: 'Gemini 2.5 Pro', apiName: 'gemini-2.5-pro' }
-        ];  selectedModelApiName = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; renderModels(); }
+    function loadModels() { const savedModels = localStorage.getItem('userModels'); const savedSelected = localStorage.getItem('selectedModel'); models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [{ displayName: 'Gemini 2.5 Pro', apiName: 'gemini-2.5-pro' }]; selectedModelApiName = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; renderModels(); }
     function selectModel(apiName) { selectedModelApiName = apiName; saveModels(); renderModels(); }
     function addModel() { const displayName = prompt("یک نام نمایشی برای مدل وارد کنید (مثلا: Gemini Flash):"); if (!displayName) return; const apiName = prompt("نام دقیق API مدل را وارد کنید (مثلا: gemini-1.5-flash-latest):"); if (!apiName) return; if (models.some(m => m.apiName === apiName)) return alert("این مدل از قبل وجود دارد."); models.push({ displayName, apiName }); selectModel(apiName); }
     function deleteModel(index) { if (!confirm(`آیا از حذف مدل "${models[index].displayName}" مطمئن هستید؟`)) return; const deletedModelWasSelected = models[index].apiName === selectedModelApiName; models.splice(index, 1); if (deletedModelWasSelected && models.length > 0) { selectModel(models[0].apiName); } else { saveModels(); renderModels(); } }
@@ -854,7 +845,7 @@ async function finalizeAssFile(assContent) {
     function addPrompt() { const name = prompt("یک نام برای پرامپت سفارشی خود وارد کنید:"); if (!name || name.trim() === '') return; const newPrompt = { id: Date.now().toString(), name: name.trim(), content: `// پرامپت جدید برای "${name.trim()}"\n// محتوای خود را اینجا وارد کنید.` }; prompts.push(newPrompt); selectPrompt(newPrompt.id); }
     function deletePrompt(id) { const promptToDelete = prompts.find(p => p.id === id); if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; prompts = prompts.filter(p => p.id !== id); if (selectedPromptId === id) { selectPrompt('default'); } else { savePrompts(); renderPrompts(); } }
     function handlePromptEditing() { if (selectedPromptId === 'default') return; const currentPrompt = prompts.find(p => p.id === selectedPromptId); if (currentPrompt) { currentPrompt.content = promptDisplayArea.value; savePrompts(); } }
-    function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); localStorage.removeItem('google_limit_warning_v1'); apiKeyInput.value = ''; loadModels(); loadPrompts(); checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
+    function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); apiKeyInput.value = ''; loadModels(); loadPrompts(); checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
 
     //  توابع  برای مدیریت تنظیمات ایمنی
     function saveSafetySettings() {
@@ -1573,246 +1564,11 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
       
     // --- END: Add mobile-specific tooltip text ---
 
-   // ============================================================
-    // START: کدهای حالت دستی (کپی شده و مستقل)
-    // ============================================================
-
-    const downloadPromptBtn = document.getElementById('download-prompt-btn');
-    const uploadTranslationTriggerBtn = document.getElementById('upload-translation-trigger-btn');
-    const manualTranslationInput = document.getElementById('manual-translation-input');
-
-    // 1. دکمه دانلود فایل خوراک
-    downloadPromptBtn.addEventListener('click', async () => {
-        if (!uploadedFile) return alert("لطفاً ابتدا فایل زیرنویس یا ویدیو را در مرحله ۱ انتخاب کنید.");
-
-        downloadPromptBtn.textContent = "⏳ در حال پردازش...";
-        downloadPromptBtn.disabled = true;
-
-        try {
-            let rawSubtitleContent = '';
-            
-            // الف) استخراج یا خواندن فایل (کپی شده از لاجیک اصلی)
-            if (uploadedFile.streamIndex !== undefined) {
-                // استخراج از ویدیو
-                const videoFile = uploadedFile.file;
-                const onFfmpegProgress = (p) => { console.log('Extracting...', p); }; // لاگ ساده
-                
-                const outputFormat = uploadedFile.type === 'subrip' ? 'srt' : 'ass';
-                const outputFilename = `output.${outputFormat}`;
-                
-                // اجرای FFmpeg
-                const ffmpegResult = await runFFmpegCommand(videoFile,
-                    ['-i', '/data/' + videoFile.name, '-map', `0:${uploadedFile.streamIndex}`, '-codec', 'copy', outputFilename],
-                    uploadedFile.duration, onFfmpegProgress
-                );
-                
-                if (!ffmpegResult.files || ffmpegResult.files.length === 0) throw new Error('استخراج ناموفق.');
-                rawSubtitleContent = await new Response(ffmpegResult.files[0].data).text();
-
-                if (uploadedFile.type === 'ass') {
-                    originalAssContent = rawSubtitleContent; // ذخیره در متغیر سراسری
-                }
-
-            } else {
-                // خواندن مستقیم فایل
-                rawSubtitleContent = await uploadedFile.text();
-            }
-
-            // ب) تبدیل به فرمت هوش مصنوعی (کپی شده)
-            const outputFormatChoice = document.querySelector('input[name="output-format"]:checked').value;
-            const useAssPath = isAssInput && outputFormatChoice === 'ass';
-            let microDVDContent = '';
-
-            if (useAssPath) {
-                // مسیر ASS
-                const processResult = processAssForTranslationAndMapping(originalAssContent);
-                microDVDContent = processResult.microdvdForAI;
-                assMapping = processResult.map; // ذخیره در متغیر سراسری که بالا تعریف کردیم
-            } else {
-                // مسیر SRT
-                let cleanSrtContent = '';
-                const sourceIsAss = isAssInput || (uploadedFile.type === 'ass');
-                
-                if (sourceIsAss) {
-                    cleanSrtContent = cleanAssToSrt(rawSubtitleContent);
-                } else { 
-                    cleanSrtContent = sortSrtContent(rawSubtitleContent);
-                }
-                microDVDContent = convertSrtToMicroDVD(cleanSrtContent);
-            }
-
-            // ذخیره فریم پایانی برای چک کردن کامل بودن بعدا
-            const blob = new Blob([microDVDContent], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-
-            // --- شروع تغییرات: تعیین نام فایل بر اساس ورودی ---
-            let originalName = '';
-            // بررسی اینکه آیا فایل از ویدیو استخراج شده یا مستقیم آپلود شده
-            if (uploadedFile.streamIndex !== undefined) {
-                originalName = uploadedFile.file.name; 
-            } else {
-                originalName = uploadedFile.name;
-            }
-
-            // حذف پسوند فایل اصلی (مثلا .mkv یا .srt)
-            const nameWithoutExt = originalName.substring(0, originalName.lastIndexOf('.')) || originalName;
-            
-            // تنظیم نام دانلود به: نام‌اصلی.txt
-            a.download = `${nameWithoutExt}.txt`;
-            // --- پایان تغییرات ---
-
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            alert("✅ فایل خوراک آماده شد و دانلود شد. حالا آن را ترجمه کنید و فایل نتیجه را آپلود کنید.");
-
-        } catch (error) {
-            console.error(error);
-            alert("خطا در ساخت فایل خوراک: " + error.message);
-        } finally {
-            downloadPromptBtn.textContent = "⬇️ ۱. دانلود فایل خوراک";
-            downloadPromptBtn.disabled = false;
-        }
-    });
-
-    // 2. دکمه انتخاب فایل ترجمه شده
-    uploadTranslationTriggerBtn.addEventListener('click', () => {
-        manualTranslationInput.click();
-    });
-
-    // 3. پردازش فایل آپلود شده (شبیه‌سازی بازگشت از API)
-   // 3. پردازش فایل آپلود شده (اصلاح شده کامل با گزارش دقیق خطاها و نمایش تمیز)
-  // 3. پردازش فایل آپلود شده (اصلاح نهایی: هماهنگی رنگ کادر با متن پیام)
-    manualTranslationInput.addEventListener('change', async () => {
-        if (manualTranslationInput.files.length === 0) return;
-        const file = manualTranslationInput.files[0];
-
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const finalText = e.target.result;
-
-            // نمایش تمیز (بدون تایم کد)
-            progressSection.classList.remove('hidden');
-            const cleanTextForDisplay = finalText.split('\n').map(line => 
-                (line.match(/\{(\d+)\}\{(\d+)\}(.*)/) || [])[3] || ''
-            ).join('\n').replace(/\|/g, ' ');
-            
-            liveOutput.textContent = cleanTextForDisplay;
-
-            const outputFormatChoice = document.querySelector('input[name="output-format"]:checked').value;
-            const useAssPath = isAssInput && outputFormatChoice === 'ass';
-
-            try {
-                let isComplete = false;
-                let untranslatedCount = 0;
-
-                if (useAssPath) {
-                    if (assMapping.length === 0) return alert("نقشه ASS خالی است! آیا مرحله ۱ را انجام دادید و صفحه را رفرش نکرده‌اید؟");
-
-                    const translationLookup = createTranslationLookupMap(finalText);
-                    const rebuildResult = rebuildAssFromTranslation(originalAssContent, assMapping, translationLookup);
-                    translatedAssContent = rebuildResult.rebuiltAss;
-                    
-                    untranslatedCount = rebuildResult.untranslatedCount;
-                    const styleFailures = rebuildResult.styleReplacementFailureCount;
-                    isComplete = checkTranslationCompleteness(finalText, originalLastEndFrame);
-
-                    let statusText = isComplete ? '✔️ ترجمه دستی کامل است و استایل‌ها حفظ شده‌اند.' : '⚠️ ترجمه دستی ممکن است ناقص باشد.';
-                    
-                    if (untranslatedCount > 0) {
-                        statusText += ` (توجه: ترجمه ${untranslatedCount} خط یافت نشد.)`;
-                    }
-                    if (styleFailures > 0) {
-                        statusText += `<br><small>(هشدار: بازسازی ${styleFailures} خط با استایل بسیار پیچیده با روش جایگزین انجام شد.)</small>`;
-                    }
-
-                    translationStatusMessage.innerHTML = statusText;
-                    translationStatusMessage.classList.remove('status-complete', 'status-incomplete');
-                    // اصلاح: رنگ کادر فقط تابع کامل بودن فایل است
-                    translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
-
-                } else {
-                    // مسیر SRT
-                    if (!uploadedFile) return alert("فایل اصلی گم شده! لطفا دوباره فایل اصلی را انتخاب کنید.");
-                    
-                    if (microDVDContent) {
-                         const mergeResult = mergeTrustedFramesWithAiText(microDVDContent, finalText);
-                         translatedMicroDVDContent = mergeResult.mergedText;
-                         untranslatedCount = mergeResult.untranslatedCount;
-                    } else {
-                         translatedMicroDVDContent = finalText;
-                    }
-
-                    isComplete = checkTranslationCompleteness(finalText, originalLastEndFrame);
-                    let statusText = isComplete ? '✔️ فایل ترجمه شده دریافت شد.' : '⚠️ فایل ترجمه شده ممکن است ناقص باشد.';
-                    
-                    if (untranslatedCount > 0) {
-                        statusText += ` (توجه: ترجمه ${untranslatedCount} خط یافت نشد.)`;
-                    }
-
-                    translationStatusMessage.innerHTML = statusText;
-                    translationStatusMessage.classList.remove('status-complete', 'status-incomplete');
-                    // اصلاح: رنگ کادر فقط تابع کامل بودن فایل است
-                    translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
-                }
-
-                translationStatusMessage.classList.remove('hidden');
-                downloadBtn.classList.remove('hidden');
-                downloadBtn.scrollIntoView({ behavior: 'smooth' });
-
-            } catch (err) {
-                alert("خطا در پردازش فایل ترجمه: " + err.message);
-                console.error(err);
-            }
-        };
-        reader.readAsText(file);
-    });
-
-    // ============================================================
-    // END: کدهای حالت دستی
-    // ============================================================
+   
 });
 
 
-// ==========================================
-// منطق نمایش پنجره هشدار شروع برنامه
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('startup-modal');
-    const checkbox = document.getElementById('modal-ack-checkbox');
-    const closeBtn = document.getElementById('modal-close-btn');
-    const STORAGE_KEY = 'google_limit_warning_v1'; // کلید ذخیره وضعیت
 
-    // اگر قبلاً تایید نکرده بود، نمایش بده
-    if (!localStorage.getItem(STORAGE_KEY)) {
-        modal.style.display = 'flex';
-    }
-
-    // فعال کردن دکمه فقط وقتی تیک زده شود
-    checkbox.addEventListener('change', () => {
-        if (checkbox.checked) {
-            closeBtn.disabled = false;
-            closeBtn.style.background = '#ff477e';
-            closeBtn.style.color = '#fff';
-            closeBtn.style.cursor = 'pointer';
-        } else {
-            closeBtn.disabled = true;
-            closeBtn.style.background = '#444';
-            closeBtn.style.color = '#aaa';
-            closeBtn.style.cursor = 'not-allowed';
-        }
-    });
-
-    // بستن پنجره و ذخیره در حافظه
-    closeBtn.addEventListener('click', () => {
-        localStorage.setItem(STORAGE_KEY, 'true');
-        modal.style.display = 'none';
-    });
-});
 
 
 

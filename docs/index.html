@@ -229,17 +229,6 @@
 
 
                 <p id="vpn-warning-text" class="description" style="text-align: center; font-weight: bold; color: var(--accent-color); margin-top: 1rem;">توجه: فیلترشکن شما باید در تمام طول فرآیند ترجمه روشن باقی بماند.</p>
-                <!-- START: بخش حالت دستی (تست) -->
-<div class="card" style="margin-bottom: 1.5rem; border: 1px dashed #ff477e; background: #251015;">
-    <h3 style="margin-top:0; font-size:1.1rem; color:#ff477e;">🛠 حالت دستی (آفلاین)</h3>
-    <p class="description">مخصوص زمانی که API کار نمی‌کند. ابتدا فایل خوراک را بگیرید، دستی ترجمه کنید و سپس آپلود کنید.</p>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <button id="download-prompt-btn" class="secondary-btn" style="flex: 1;">⬇️ ۱. دانلود فایل خوراک</button>
-        <button id="upload-translation-trigger-btn" class="secondary-btn" style="flex: 1;">⬆️ ۲. آپلود ترجمه شده</button>
-        <input type="file" id="manual-translation-input" accept=".txt" hidden>
-    </div>
-</div>
-<!-- END: بخش حالت دستی -->
                 <button id="translate-btn" disabled>
                     <span class="icon">⚡️</span> شروع ترجمه
                 </button>
@@ -299,41 +288,6 @@
       
     </div>
     
-
-<!-- START: پنجره هشدار شروع برنامه -->
-<div id="startup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: #251015; border: 2px solid #ff477e; padding: 25px; border-radius: 12px; max-width: 500px; width: 90%; color: #fff; text-align: right; box-shadow: 0 0 20px rgba(255, 71, 126, 0.4);">
-        <h3 style="color: #ff477e; margin-top: 0;">⚠️ اطلاعیه مهم: محدودیت‌های جدید گوگل</h3>
-        
-        <p style="line-height: 1.6; font-size: 0.95rem;">
-            متأسفانه گوگل دسترسی رایگان به مدل‌ قددرتمند <b>Gemini 2.5 Pro</b> را محدود کرده است و فعلاً امکان استفاده از آنها وجود ندارد.
-            <br><br>
-            در حال حاضر تنها مدل‌های سری <b>Gemini 2.5 Flash</b> فعال است. این مدل‌ سرعت بالایی دارد اما ممکن است در درک متن‌های پیچیده، کمی ضعیف‌تر عمل کنند و نتیجه پایداری نداشته باشد.
-        </p>
-
-        <div style="background: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px; margin: 15px 0;">
-            <strong style="color: #ffda79;">🚨 اقدام ضروری برای تنظیمات جدید:</strong>
-            <ol style="margin: 5px 20px 5px 0; font-size: 0.9rem;">
-                <li>کلید API خود را کپی کنید.</li>
-                <li>به پایین بخش تنظیمات بروید و دکمه <b>«بازنشانی کل تنظیمات»</b> را بزنید.</li>
-                <li>مجدداً کلید API را وارد کنید.</li>
-            </ol>
-        </div>
-
-        <div style="margin-top: 20px;">
-            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
-                <input type="checkbox" id="modal-ack-checkbox" style="width: 18px; height: 18px;">
-                متن بالا را خواندم و متوجه شدم.
-            </label>
-        </div>
-
-        <button id="modal-close-btn" disabled style="width: 100%; margin-top: 15px; padding: 10px; background: #444; color: #aaa; border: none; border-radius: 6px; cursor: not-allowed; font-weight: bold;">
-            تایید و بستن
-        </button>
-    </div>
-</div>
-<!-- END: پنجره هشدار شروع برنامه -->
-
     <script src="script.js"></script>
 </body>
 </html>
