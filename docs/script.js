@@ -35,6 +35,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const safetyDangerousContentToggle = document.getElementById('safety-dangerous-content-toggle');
      // START: عناصر جدید برای نمایش/عدم نمایش کلید API
     const toggleApiKeyVisibilityBtn = document.getElementById('toggle-api-key-visibility');
+     const thinkingModeToggle = document.getElementById('thinking-mode-toggle');
+
+    // توابع اختصاصی برای مدیریت حالت تفکر
+    function saveThinkingModeSetting() {
+        localStorage.setItem('thinkingModeEnabled', thinkingModeToggle.checked);
+    }
+    function loadThinkingModeSetting() {
+        const savedState = localStorage.getItem('thinkingModeEnabled');
+        thinkingModeToggle.checked = savedState === null ? true : savedState === 'true';
+    }
     const eyeOpenIcon = document.getElementById('eye-open');
     const eyeSlashedIcon = document.getElementById('eye-slashed');
     // END: عناصر جدید
@@ -855,7 +865,11 @@ async function finalizeAssFile(assContent) {
     function addPrompt() { const name = prompt("یک نام برای پرامپت سفارشی خود وارد کنید:"); if (!name || name.trim() === '') return; const newPrompt = { id: Date.now().toString(), name: name.trim(), content: `// پرامپت جدید برای "${name.trim()}"\n// محتوای خود را اینجا وارد کنید.` }; prompts.push(newPrompt); selectPrompt(newPrompt.id); }
     function deletePrompt(id) { const promptToDelete = prompts.find(p => p.id === id); if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; prompts = prompts.filter(p => p.id !== id); if (selectedPromptId === id) { selectPrompt('default'); } else { savePrompts(); renderPrompts(); } }
     function handlePromptEditing() { if (selectedPromptId === 'default') return; const currentPrompt = prompts.find(p => p.id === selectedPromptId); if (currentPrompt) { currentPrompt.content = promptDisplayArea.value; savePrompts(); } }
-    function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); localStorage.removeItem('google_limit_warning_v2'); apiKeyInput.value = ''; loadModels(); loadPrompts(); checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
+    function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگ '.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); localStorage.removeItem('google_limit_warning_v2'); 
+    localStorage.removeItem('thinkingModeEnabled');
+    apiKeyInput.value = ''; loadModels(); loadPrompts(); 
+    loadThinkingModeSetting();
+    checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
 
     //  توابع  برای مدیریت تنظیمات ایمنی
     function saveSafetySettings() {
@@ -1140,6 +1154,17 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         if (safetySexuallyExplicitToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" });
         if (safetyDangerousContentToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" });
 
+             const generationConfig = {
+            temperature: parseFloat(tempSlider.value),
+            topP: parseFloat(topPSlider.value)
+        };
+
+        if (thinkingModeToggle.checked) {
+            generationConfig.thinkingConfig = {
+                thinkingBudget: -1
+            };
+        }
+
         const requestBody = {
             contents: [{
                 parts: [
@@ -1147,10 +1172,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                     { fileData: { mime_type: "text/plain", file_uri: fileUri } }
                 ]
             }],
-            generationConfig: {
-                temperature: parseFloat(tempSlider.value),
-                topP: parseFloat(topPSlider.value)
-            }
+            generationConfig: generationConfig
         };
 
         if (safetySettings.length > 0) {
@@ -1255,7 +1277,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         toggle.addEventListener('change', saveSafetySettings);
     });
     // END: اتصال Event Listener های تنظیمات ایمنی
-    
+    thinkingModeToggle.addEventListener('change', saveThinkingModeSetting);
     tempSlider.addEventListener('input', (e) => tempValue.textContent = e.target.value);
     topPSlider.addEventListener('input', (e) => topPValue.textContent = e.target.value);
     dropZone.addEventListener('click', () => fileInput.click());
@@ -1559,7 +1581,8 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
        // بارگذاری اولیه
     loadModels();
     loadPrompts();
-     loadSafetySettings();
+    loadSafetySettings();
+    loadThinkingModeSetting();
     checkFormValidity();
 
     // --- START: Add mobile-specific tooltip text ---

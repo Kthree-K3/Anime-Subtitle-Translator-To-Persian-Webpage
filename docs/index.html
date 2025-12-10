@@ -101,7 +101,21 @@
                             <div id="model-list"></div>
                             <button id="add-model-btn" class="secondary-btn">+ افزودن مدل جدید</button>
                         </div>
-                        
+                        <div class="setting">
+                            <label>حالت تفکر (Thinking Mode)</label>
+                            <div class="safety-setting-item"> <!-- از استایل موجود برای هماهنگی استفاده می‌کنیم -->
+                                <input type="checkbox" id="thinking-mode-toggle" checked>
+                                <div class="label-group">
+                                    <label for="thinking-mode-toggle">فعال‌سازی حالت تفکر</label>
+                                    <div class="help-tooltip-container">
+                                        <span class="help-icon">؟</span>
+                                        <div class="help-tooltip-text">
+                                           وقتی فعال باشد، مدل قبل از ارائه پاسخ نهایی، یک "فرایند تفکر داخلی" را برای درک بهتر متن و استدلال پیچیده طی می‌کند. این کار معمولاً منجر به ترجمه‌ای با کیفیت، روان و دقیق‌تر می‌شود.<br><b>توصیه می‌شود این گزینه فعال باقی بماند.</b>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="setting">
                             <div class="setting-label">
                                 <label for="temperature-slider">دما (Temperature): <span id="temp-value">0.7</span></label>
