@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function loadThinkingModeSetting() {
         const savedState = localStorage.getItem('thinkingModeEnabled');
-        thinkingModeToggle.checked = savedState === null ? true : savedState === 'true';
+        thinkingModeToggle.checked = savedState === null ? false : savedState === 'true';
     }
     const eyeOpenIcon = document.getElementById('eye-open');
     const eyeSlashedIcon = document.getElementById('eye-slashed');
@@ -1627,6 +1627,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'none';
     });
 });
+
 
 
 
