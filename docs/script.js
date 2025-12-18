@@ -829,9 +829,11 @@ async function finalizeAssFile(assContent) {
     function saveModels() { localStorage.setItem('userModels', JSON.stringify(models)); localStorage.setItem('selectedModel', selectedModelApiName); }
     function loadModels() { const savedModels = localStorage.getItem('userModels'); const savedSelected = localStorage.getItem('selectedModel'); models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [
             // --- مدل جدید که می‌خواهید پیش‌فرض باشد (اولی) ---
-            { displayName: 'Gemini 2.5 Flash Latest', apiName: 'gemini-flash-latest' },
+         { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
+          
             
             // --- مدل‌های قبلی ---
+          { displayName: 'Gemini 2.5 Flash Latest', apiName: 'gemini-flash-latest' },
             { displayName: 'Gemini 2.5 Pro', apiName: 'gemini-2.5-pro' }
         ];  selectedModelApiName = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; renderModels(); }
     function selectModel(apiName) { selectedModelApiName = apiName; saveModels(); renderModels(); }
@@ -1625,6 +1627,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'none';
     });
 });
+
 
 
 
