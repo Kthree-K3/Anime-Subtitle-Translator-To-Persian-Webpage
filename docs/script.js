@@ -1610,20 +1610,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('startup-modal');
     const closeBtn = document.getElementById('modal-close-btn');
     const checkbox = document.getElementById('modal-ack-checkbox'); 
-    const STORAGE_KEY = 'google_limit_warning_v3'; 
-
-  
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    const STORAGE_KEY = 'google_limit_warning_v3';
+    
+    // فقط نمایش بده اگر کاربر کلید API داره و هنوز هشدار رو ندیده
+    const hasApiKey = localStorage.getItem('geminiApiKey');
+    const hasSeenWarning = localStorage.getItem(STORAGE_KEY);
+    
+    if (hasApiKey && !hasSeenWarning) {
         modal.style.display = 'flex';
     }
-
     
     closeBtn.addEventListener('click', () => {
-              if (checkbox.checked) {
+        if (checkbox.checked) {
             localStorage.setItem(STORAGE_KEY, 'true');
         }
-        
-      
         modal.style.display = 'none';
     });
 });
