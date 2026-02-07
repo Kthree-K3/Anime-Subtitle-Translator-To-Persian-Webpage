@@ -770,6 +770,7 @@ async function finalizeAssFile(assContent) {
                 const parts = line.split(',');
                 if (parts.length > 2) {
                     parts[1] = 'Vazirmatn Medium'; // تغییر نام فونت
+                    parts[13] = '0';  // صفر کردن Spacing
                     // اصلاح انکودینگ: آخرین بخش را به 1 تغییر می‌دهیم
                     parts[parts.length - 1] = '1';
                     currentLine = parts.join(',');
@@ -1628,6 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'none';
     });
 });
+
 
 
 
