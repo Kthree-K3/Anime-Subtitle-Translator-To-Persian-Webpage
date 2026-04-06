@@ -1,5 +1,4 @@
-﻿[Fonts]
-fontname: Vazirmatn-Medium_0.ttf
+﻿fontname: Vazirmatn-Medium_0.ttf
 !!%!!!!0!)!!!Q"Q2U2&2KA=J,E!!7S!!!!"KE>14V0/>5"Y!!&O,!!!6+2(5V6#G*0$K!!"QN!!!"R/
 4V-P-GBO7.A!!!&Y!!!!9'.N98#GTGU,!!!7L!!!"`:H98.Q!!!!%!!"<(A!!!!):WRZ:O&[_J)!!#E9
 !!%)JGBF97185CZ6!!!!`!!!!$:I;'6B$`M*61!!!41!!!!E;'VU?(&>1%U!!!(9!!!5V'RP9W'IJOBA
