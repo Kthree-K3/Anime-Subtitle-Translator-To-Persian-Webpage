@@ -873,8 +873,7 @@ async function finalizeAssFile(assContent) {
     apiKeyInput.value = ''; loadModels(); loadPrompts(); 
     loadThinkingModeSetting();
     checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
-    // رفرش کردن صفحه
-    location.reload(); 
+    
 
     //  توابع  برای مدیریت تنظیمات ایمنی
     function saveSafetySettings() {
