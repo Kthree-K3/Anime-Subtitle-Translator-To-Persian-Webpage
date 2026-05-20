@@ -831,10 +831,10 @@ async function finalizeAssFile(assContent) {
     function saveModels() { localStorage.setItem('userModels', JSON.stringify(models)); localStorage.setItem('selectedModel', selectedModelApiName); }
     function loadModels() { const savedModels = localStorage.getItem('userModels'); const savedSelected = localStorage.getItem('selectedModel'); models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [
             // --- مدل جدید که می‌خواهید پیش‌فرض باشد (اولی) ---
-         { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },
+         { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
   
             // --- مدل‌های قبلی ---
-          { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
+         { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },
             { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' }
         ];  selectedModelApiName = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; renderModels(); }
     function selectModel(apiName) { selectedModelApiName = apiName; saveModels(); renderModels(); }
@@ -868,7 +868,7 @@ async function finalizeAssFile(assContent) {
     function addPrompt() { const name = prompt("یک نام برای پرامپت سفارشی خود وارد کنید:"); if (!name || name.trim() === '') return; const newPrompt = { id: Date.now().toString(), name: name.trim(), content: `// پرامپت جدید برای "${name.trim()}"\n// محتوای خود را اینجا وارد کنید.` }; prompts.push(newPrompt); selectPrompt(newPrompt.id); }
     function deletePrompt(id) { const promptToDelete = prompts.find(p => p.id === id); if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; prompts = prompts.filter(p => p.id !== id); if (selectedPromptId === id) { selectPrompt('default'); } else { savePrompts(); renderPrompts(); } }
     function handlePromptEditing() { if (selectedPromptId === 'default') return; const currentPrompt = prompts.find(p => p.id === selectedPromptId); if (currentPrompt) { currentPrompt.content = promptDisplayArea.value; savePrompts(); } }
-    function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگ '.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); localStorage.removeItem('google_limit_warning_v3.5'); 
+    function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگ '.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); localStorage.removeItem('google_limit_warning_v3.6'); 
     localStorage.removeItem('thinkingModeEnabled');
     apiKeyInput.value = ''; loadModels(); loadPrompts(); 
     loadThinkingModeSetting();
@@ -1616,7 +1616,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('startup-modal');
     const closeBtn = document.getElementById('modal-close-btn');
     const checkbox = document.getElementById('modal-ack-checkbox'); 
-    const STORAGE_KEY = 'google_limit_warning_v3.5';
+    const STORAGE_KEY = 'google_limit_warning_v3.6';
     
     // فقط نمایش بده اگر کاربر کلید API داره و هنوز هشدار رو ندیده
     const hasApiKey = localStorage.getItem('geminiApiKey');
