@@ -872,7 +872,7 @@ async function finalizeAssFile(assContent) {
     localStorage.removeItem('thinkingModeEnabled');
     apiKeyInput.value = ''; loadModels(); loadPrompts(); 
     loadThinkingModeSetting();
-    checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.'); } }
+    checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.');  location.reload();  } }
     
 
     //  توابع  برای مدیریت تنظیمات ایمنی
