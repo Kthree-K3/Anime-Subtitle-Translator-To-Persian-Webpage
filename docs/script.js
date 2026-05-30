@@ -834,7 +834,7 @@ async function finalizeAssFile(assContent) {
          { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
             // --- مدل‌های قبلی ---
         { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },
-        { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' }
+        { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' },
         { displayName: 'Gemini Flash Latest', apiName: 'gemini-flash-latest' }
                            
         ];  selectedModelApiName = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; renderModels(); }
