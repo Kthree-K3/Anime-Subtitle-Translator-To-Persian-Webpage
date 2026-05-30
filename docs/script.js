@@ -832,10 +832,11 @@ async function finalizeAssFile(assContent) {
     function loadModels() { const savedModels = localStorage.getItem('userModels'); const savedSelected = localStorage.getItem('selectedModel'); models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [
             // --- مدل جدید که می‌خواهید پیش‌فرض باشد (اولی) ---
          { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
-  
             // --- مدل‌های قبلی ---
-         { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },
-            { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' }
+        { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },
+        { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' }
+        { displayName: 'Gemini Flash Latest', apiName: 'gemini-flash-latest' }
+                           
         ];  selectedModelApiName = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; renderModels(); }
     function selectModel(apiName) { selectedModelApiName = apiName; saveModels(); renderModels(); }
     function addModel() { const displayName = prompt("یک نام نمایشی برای مدل وارد کنید (مثلا: Gemini Flash):"); if (!displayName) return; const apiName = prompt("نام دقیق API مدل را وارد کنید (مثلا: gemini-1.5-flash-latest):"); if (!apiName) return; if (models.some(m => m.apiName === apiName)) return alert("این مدل از قبل وجود دارد."); models.push({ displayName, apiName }); selectModel(apiName); }
