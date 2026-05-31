@@ -247,8 +247,6 @@ const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.workers.dev';
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = Math.floor(totalSeconds % 60);
         const milliseconds = Math.round((totalSeconds - Math.floor(totalSeconds)) * 1000);
-        if (milliseconds === 1000) {
-            milliseconds = 999;  }
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')},${milliseconds.toString().padStart(3, '0')}`;
     }
        function convertMicroDVDtoSrt(microDVDContent, fps = 23.976) {
