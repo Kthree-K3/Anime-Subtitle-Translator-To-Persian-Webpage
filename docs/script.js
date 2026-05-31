@@ -645,57 +645,119 @@ function rebuildAssFromTranslation(originalAssContent, mapping, translationLooku
     
 // === START: تابع نهایی "پیوند" بر اساس فرمان شما (نسخه بی‌نقص) ===
 function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
-    if (!originalMicroDVD) return { mergedText: '', untranslatedCount: 0 };
+    if (!originalMicroDVD) return { mergedText: '', untranslatedCount: 0, reconstructedCount: 0 };
     const originalLines = originalMicroDVD.trim().split('\n');
-    if (!aiOutputMicroDVD) return { mergedText: originalMicroDVD, untranslatedCount: originalLines.length };
+    if (!aiOutputMicroDVD) return { mergedText: originalMicroDVD, untranslatedCount: originalLines.length, reconstructedCount: 0 };
 
     const aiLines = aiOutputMicroDVD.trim().split('\n');
-    
-    // مرحله ۱: ساخت یک "فرهنگ لغت" (Map) از ترجمه‌های سالم AI
-    // کلید: بلوک زمانی کامل "{start}{end}"
-    // مقدار: متن ترجمه شده
-    const translatedTextMap = new Map();
     const microDVDLineRegex = /^{(\d+)}{(\d+)}(.*)$/;
 
-    for (const line of aiLines) {
+    // ۱. تجزیه و پارس خطوط فایل اصلی
+    const parsedOrig = originalLines.map((line, index) => {
+        const match = line.match(microDVDLineRegex);
+        if (match) {
+            return {
+                index,
+                line,
+                startFrame: match[1],
+                endFrame: match[2],
+                timeKey: `{${match[1]}}{${match[2]}}`,
+                text: match[3]
+            };
+        }
+        return null;
+    });
+
+    // ۲. تجزیه و پارس خطوط دریافتی از هوش مصنوعی
+    const parsedAi = aiLines.map((line, index) => {
         const match = line.trim().match(microDVDLineRegex);
         if (match) {
-            const startFrame = match[1];
-            const endFrame = match[2];
-            const text = match[3];
-            const timeBlockKey = `{${startFrame}}{${endFrame}}`; // کلید اصلی ما
-            translatedTextMap.set(timeBlockKey, text);
-        } else {
-            console.warn("خط خراب از خروجی هوش مصنوعی نادیده گرفته شد:", line.trim());
+            return {
+                index,
+                line,
+                startFrame: match[1],
+                endFrame: match[2],
+                timeKey: `{${match[1]}}{${match[2]}}`,
+                text: match[3]
+            };
+        }
+        return null;
+    });
+
+    // نقشه‌ها برای نگهداری ایندکس خطوط جفت‌شده
+    const matchedOrigToAi = new Map(); // origIndex -> aiIndex
+    const matchedAiToOrig = new Map(); // aiIndex -> origIndex
+
+    // ۳. گام اول: تطابق ۱۰۰٪ دقیق بر اساس کلید فریم‌های اصلی
+    for (let i = 0; i < parsedOrig.length; i++) {
+        const orig = parsedOrig[i];
+        if (!orig) continue;
+
+        const aiIndex = parsedAi.findIndex((ai, j) => ai && !matchedAiToOrig.has(j) && ai.timeKey === orig.timeKey);
+        if (aiIndex !== -1) {
+            matchedOrigToAi.set(i, aiIndex);
+            matchedAiToOrig.set(aiIndex, i);
         }
     }
 
-    // مرحله ۲: بازسازی زیرنویس نهایی با استفاده از فایل اصلی به عنوان نقشه راه
-    const mergedLines = [];
-    let untranslatedCount = 0; // شمارنده برای خطوط ترجمه نشده
-    for (const originalLine of originalLines) {
-        const originalMatch = originalLine.match(microDVDLineRegex);
-        if (originalMatch) {
-            const startFrame = originalMatch[1];
-            const endFrame = originalMatch[2];
-            const timeBlockKey = `{${startFrame}}{${endFrame}}`;
+    // ۴. گام دوم: الگوریتم نجات و بازسازی خطوط منفرد جا افتاده
+    let reconstructedCount = 0;
 
-            // اگر ترجمه‌ای با این بلوک زمانی دقیق پیدا شد، از آن استفاده می‌کنیم
-            if (translatedTextMap.has(timeBlockKey)) {
-                const translatedText = translatedTextMap.get(timeBlockKey);
-                mergedLines.push(`${timeBlockKey}${translatedText}`);
-            } else {
-                // اگر پیدا نشد، خود خط اصلی انگلیسی را دست‌نخورده نگه می‌داریم
-                console.warn(`ترجمه‌ای برای بلوک زمانی ${timeBlockKey} یافت نشد. خط اصلی انگلیسی حفظ می‌شود.`);
-                mergedLines.push(originalLine);
-                untranslatedCount++; // افزایش شمارنده
+    for (let i = 0; i < parsedOrig.length; i++) {
+        // فقط اگر خط فعلی فاقد ترجمه باشد
+        if (parsedOrig[i] && !matchedOrigToAi.has(i)) {
+            
+            // بررسی شرط وجود همسایه ترجمه‌شده در قبل و بعد (مرز ساندویچی)
+            const hasPrevNeighbor = i > 0 && parsedOrig[i - 1] && matchedOrigToAi.has(i - 1);
+            const hasNextNeighbor = i < parsedOrig.length - 1 && parsedOrig[i + 1] && matchedOrigToAi.has(i + 1);
+
+            if (hasPrevNeighbor && hasNextNeighbor) {
+                const prevAiIndex = matchedOrigToAi.get(i - 1);
+                const nextAiIndex = matchedOrigToAi.get(i + 1);
+
+                // پیدا کردن خطوط آزاد (ترجمه‌شده ولی جفت‌نشده) بین این دو مرز در خروجی هوش مصنوعی
+                const candidateAiIndices = [];
+                for (let j = prevAiIndex + 1; j < nextAiIndex; j++) {
+                    if (parsedAi[j] && !matchedAiToOrig.has(j)) {
+                        candidateAiIndices.push(j);
+                    }
+                }
+
+                // اگر دقیقاً یک خط یتیم پیدا شد، آن را به خط اصلی متناظر پیوند می‌دهیم
+                if (candidateAiIndices.length === 1) {
+                    const matchedAiIndex = candidateAiIndices[0];
+                    matchedOrigToAi.set(i, matchedAiIndex);
+                    matchedAiToOrig.set(matchedAiIndex, i);
+                    reconstructedCount++;
+                }
             }
+        }
+    }
+
+    // ۵. بازسازی خروجی نهایی
+    const mergedLines = [];
+    let untranslatedCount = 0;
+
+    for (let i = 0; i < parsedOrig.length; i++) {
+        const orig = parsedOrig[i];
+        if (orig) {
+            if (matchedOrigToAi.has(i)) {
+                const aiIndex = matchedOrigToAi.get(i);
+                const translatedText = parsedAi[aiIndex].text;
+                mergedLines.push(`${orig.timeKey}${translatedText}`);
+            } else {
+                mergedLines.push(orig.line);
+                untranslatedCount++;
+            }
+        } else {
+            mergedLines.push(originalLines[i]);
         }
     }
 
     return {
         mergedText: mergedLines.join('\n'),
-        untranslatedCount: untranslatedCount
+        untranslatedCount: untranslatedCount,
+        reconstructedCount: reconstructedCount
     };
 }
 // === END: تابع نهایی "پیوند" ===
@@ -1471,7 +1533,10 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                 const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
                 let statusText = isComplete ? '✔️ ترجمه کامل است.' : '⚠️ ترجمه ممکن است ناقص باشد.';
                 if (mergeResult.untranslatedCount > 0) {
-                    statusText += ` (توجه: ترجمه ${mergeResult.untranslatedCount} خط یافت نشد.)`;
+                   statusText += ` (توجه: ترجمه ${mergeResult.untranslatedCount} خط یافت نشد.)`;
+                }
+                if (mergeResult.reconstructedCount > 0) {
+                     statusText += ` (تعداد ${mergeResult.reconstructedCount} خط با تایم‌کد مخدوش بازسازی شد.)`;
                 }
                 translationStatusMessage.innerHTML = statusText;
                 translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
@@ -1634,18 +1699,3 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.style.display = 'none';
     });
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
