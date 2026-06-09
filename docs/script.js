@@ -1228,7 +1228,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
         if (thinkingModeToggle.checked) {
             generationConfig.thinkingConfig = {
-                thinkingBudget: -1
+                 thinkingLevel: "high"
             };
         }
 
