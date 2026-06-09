@@ -39,11 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // توابع اختصاصی برای مدیریت حالت تفکر
     function saveThinkingModeSetting() {
-        localStorage.setItem('thinkingModeEnabled', thinkingModeToggle.checked);
+        localStorage.setItem('thinkingModeEnabled_v2', thinkingModeToggle.checked);
     }
     function loadThinkingModeSetting() {
-        const savedState = localStorage.getItem('thinkingModeEnabled');
-        thinkingModeToggle.checked = savedState === null ? false : savedState === 'true';
+        const savedState = localStorage.getItem('thinkingModeEnabled_v2');
+        thinkingModeToggle.checked = savedState === null ? true : savedState === 'true';
     }
     const eyeOpenIcon = document.getElementById('eye-open');
     const eyeSlashedIcon = document.getElementById('eye-slashed');
@@ -932,7 +932,7 @@ async function finalizeAssFile(assContent) {
     function deletePrompt(id) { const promptToDelete = prompts.find(p => p.id === id); if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; prompts = prompts.filter(p => p.id !== id); if (selectedPromptId === id) { selectPrompt('default'); } else { savePrompts(); renderPrompts(); } }
     function handlePromptEditing() { if (selectedPromptId === 'default') return; const currentPrompt = prompts.find(p => p.id === selectedPromptId); if (currentPrompt) { currentPrompt.content = promptDisplayArea.value; savePrompts(); } }
     function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگ '.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); localStorage.removeItem('google_limit_warning_v3.6'); 
-    localStorage.removeItem('thinkingModeEnabled');
+    localStorage.removeItem('thinkingModeEnabled_v2');
     apiKeyInput.value = ''; loadModels(); loadPrompts(); 
     loadThinkingModeSetting();
     checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.');  location.reload();  } }
