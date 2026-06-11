@@ -1588,7 +1588,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             <pre>${errorMessageText}</pre>`;
             translationStatusMessage.innerHTML  = '❌ خطای تنظیمات';
         } else if (errorMessageText.toLowerCase().includes('exceeded your current quota')) {
-            userFriendlyMessage = `<p>سهمیه روزانه کلید API شما به پایان رسیده است.</p>
+            userFriendlyMessage = `<p>شما از سهمیه فعلی کلید API خود فراتر رفته‌اید.</p>
             <pre>${errorMessageText}</pre>`;
             translationStatusMessage.innerHTML  = '❌ خطای سهمیه';
         } else if (errorMessageText.toLowerCase().includes('stream')) {
