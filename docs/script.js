@@ -1583,7 +1583,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             userFriendlyMessage = `<p>این مدل در حال حاضر ترافیک و تقاضای بالایی را تجربه می‌کند. این افزایش تقاضا معمولاً موقتی است. لطفاً کمی بعد دوباره تلاش کنید.</p>
             <pre>${errorMessageText}</pre>`;
             translationStatusMessage.innerHTML  = '❌ شلوغی سرور (ترافیک بالا)';
-        } else if (errorMessageText.toLowerCase().includes('Thinking level')) {
+        } else if (errorMessageText.toLowerCase().includes('thinking level')) {
             userFriendlyMessage = `<p>مدل انتخاب شده از حالت تفگر عمیق پشتیبانی نمی‌کند.</p>
             <pre>${errorMessageText}</pre>`;
             translationStatusMessage.innerHTML  = '❌ خطای تنظیمات';
