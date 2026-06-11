@@ -1583,6 +1583,10 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             userFriendlyMessage = `<p>این مدل در حال حاضر ترافیک و تقاضای بالایی را تجربه می‌کند. این افزایش تقاضا معمولاً موقتی است. لطفاً کمی بعد دوباره تلاش کنید.</p>
             <pre>${errorMessageText}</pre>`;
             translationStatusMessage.innerHTML  = '❌ شلوغی سرور (ترافیک بالا)';
+        } else if (errorMessageText.toLowerCase().includes('Thinking level')) {
+            userFriendlyMessage = `<p>مدل انتخاب شده از حالت تفگر عمیق پشتیبانی نمی‌کند.</p>
+            <pre>${errorMessageText}</pre>`;
+            translationStatusMessage.innerHTML  = '❌ خطای تنظیمات';
         } else if (errorMessageText.toLowerCase().includes('stream')) {
             userFriendlyMessage = `<p class="error-subtitle"><b>خطای دریافت ترجمه از پراکسی (Stream Error).</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً زمانی رخ می‌دهد که پراکسی فعال است و ارتباط شما با آن به دلیل ناپایداری اینترنت یا فیلترشکن دچار اختلال می‌شود.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از اتصال پایدار اینترنت خود مطمئن شوید.</li><li>اگر از فیلترشکن همزمان با پراکسی استفاده می‌کنید، آن را موقتاً خاموش کرده و دوباره امتحان کنید (پراکسی خودش کار فیلترشکن را انجام می‌دهد).</li><li>اگر مشکل ادامه داشت، احتمالاً مشکل از سرورهای هوش مصنوعی است، چند دقیقه صبر کنید و بعد دوباره امتحان کنید.</li></ol>`;
             translationStatusMessage.innerHTML = '❌ خطای پراکسی/استریم.';
