@@ -922,3 +922,83 @@ hr.footer-hr {
 }
 
 /* === END: استایل اختصاصی === */
+
+.api-guide-details {
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    background-color: rgba(255, 255, 255, 0.02);
+    border-right: 4px solid var(--accent-color);
+    border-radius: 6px;
+    padding: 0 1.2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-left: 1px solid rgba(255, 255, 255, 0.04);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background-color 0.3s ease;
+}
+
+.api-guide-details[open] {
+    background-color: rgba(255, 71, 126, 0.03);
+}
+
+.api-guide-details > summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    cursor: pointer;
+    padding: 0.8rem 0;
+    color: var(--text-color);
+    font-weight: bold;
+    font-size: 0.95rem;
+    list-style: none;
+    user-select: none;
+}
+
+.api-guide-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.api-guide-details > summary::before {
+    content: '◀';
+    font-size: 0.75rem;
+    color: var(--subtle-text-color);
+    display: inline-block;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.api-guide-details[open] > summary::before {
+    transform: rotate(-90deg);
+    color: var(--accent-color);
+}
+
+.api-guide-details > summary:hover {
+    color: var(--accent-color-hover);
+}
+
+.api-guide-content {
+    padding: 0.6rem 0 1rem 0;
+    border-top: 1px dashed var(--border-color);
+}
+
+.api-guide-content .description {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+}
+
+.api-guide-list {
+    padding-right: 20px;
+    margin: 0.5rem 0 1rem 0;
+    font-size: 0.9rem;
+}
+
+.api-guide-list li {
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.api-guide-note {
+    font-size: 0.85rem;
+    margin: 0;
+    color: var(--subtle-text-color);
+    line-height: 1.6;
+}
