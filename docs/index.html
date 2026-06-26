@@ -316,47 +316,7 @@
 <!-- START: پنجره هشدار شروع برنامه -->
 <div id="startup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
     <div style="background: #251015; border: 2px solid #4dabf7; padding: 25px; border-radius: 12px; max-width: 400px; width: 80%; color: #fff; text-align: right; box-shadow: 0 0 20px rgba(77, 171, 247, 0.4);">
-        <h3 style="color: #4dabf7; margin-top: 0;">✨ Gemini 3.5 Flash رایگان منتشر شد!</h3>
-        
-       <p style="line-height: 1.6; font-size: 0.95rem;">
-    
-    <b>نکته:</b> این مدل به‌تازگی عرضه شده و به دلیل حجم بالای درخواست‌ها روی سرورهای آن، مرحله «تفکر» ممکن است زمان نسبتاً طولانی‌تری داشته باشد.
-    <br><br>
-
-    این مسئله یک محدودیت ایجاد می‌کند:
-    <br>
-      • ممکن است در ساعات پیک استفاده از مدل، امکان استفاده از گزینه <b>پروکسی Cloudflare</b> وجود نداشته باشند، زیرا این سرویس پروکسی محدودیت حدود ۲ دقیقه‌ای برای باز ماندن اتصال دارد و اگر پاسخ مدل بیش از 2 دقیقه طول بکشد، باید از فیلترشکن شخصی خود استفاده کنید که باید از پایداری و کیفیت اتصال مناسبی برخوردار باشد.
-    <br><br>
-
-    
-</p>
-        <div style="background: rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px; margin: 15px 0;">
-            <strong style="color: #ffda79;">🚨 اقدام ضروری برای ارتقا:</strong>
-            <ol style="margin: 5px 20px 5px 0; font-size: 0.9rem;">
-                <li>کلید API خود را کپی کنید.</li>
-                <li>به پایین بخش تنظیمات پیشرفته بروید و دکمه <b>«بازنشانی کل تنظیمات به حالت اولیه»</b> را بزنید.</li>
-                <li>مجدداً کلید API را وارد کنید.</li>
-            </ol>
-        </div>
-
-        <div style="margin-top: 20px;">
-            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
-                <input type="checkbox" id="modal-ack-checkbox" style="width: 18px; height: 18px;">
-                متوجه شدم
-            </label>
-        </div>
-
-        <button id="modal-close-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #4dabf7; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-           تایید و بستن
-        </button>
-    </div>
-</div>
-<!-- END: پنجره هشدار شروع برنامه -->
-
-	<!-- START: پنجره هشدار شروع برنامه -->
-<div id="startup-modal2" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
-    <div style="background: #251015; border: 2px solid #4dabf7; padding: 25px; border-radius: 12px; max-width: 400px; width: 80%; color: #fff; text-align: right; box-shadow: 0 0 20px rgba(77, 171, 247, 0.4);">
-        <h3 style="color: #4dabf7; margin-top: 0;">⚠️ مشکل موقت سرویس Gemini 3.5 Flash</h3>
+       <h3 style="color: #4dabf7; margin-top: 0;">⚠️ مشکل موقت سرویس Gemini 3.5 Flash</h3>
         
         <p style="line-height: 1.7; font-size: 0.95rem;">
             این روزها مدل <b>Gemini 3.5 Flash</b> به خاطر استقبال جهانی بالا، گاهی با خطای «شلوغی سرور (ترافیک بالا)» مواجه میشه.
@@ -375,13 +335,21 @@
             </label>
         </div>
 
+        <div style="margin-top: 20px;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                <input type="checkbox" id="modal-ack-checkbox" style="width: 18px; height: 18px;">
+                متوجه شدم
+            </label>
+        </div>
+
         <button id="modal-close-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #4dabf7; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-            تایید و بستن
+           تایید و بستن
         </button>
     </div>
 </div>
 <!-- END: پنجره هشدار شروع برنامه -->
-    
+
+	    
     <script src="script.js"></script>
 </body>
 </html>
