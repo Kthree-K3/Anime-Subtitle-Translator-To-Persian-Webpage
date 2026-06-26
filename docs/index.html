@@ -352,6 +352,35 @@
     </div>
 </div>
 <!-- END: پنجره هشدار شروع برنامه -->
+
+	<!-- START: پنجره هشدار شروع برنامه -->
+<div id="startup-modal2" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: #251015; border: 2px solid #4dabf7; padding: 25px; border-radius: 12px; max-width: 400px; width: 80%; color: #fff; text-align: right; box-shadow: 0 0 20px rgba(77, 171, 247, 0.4);">
+        <h3 style="color: #4dabf7; margin-top: 0;">⚠️ مشکل موقت سرویس Gemini Flash 3.5</h3>
+        
+        <p style="line-height: 1.7; font-size: 0.95rem;">
+            این روزها مدل <b>Gemini Flash 3.5</b> به خاطر استقبال جهانی بالا، گاهی با خطای «شلوغی سرور (ترافیک بالا)» مواجه میشه.
+            <br><br>
+            این مشکل مربوط به سرورهای گوگله و تا وقتی خودشون برطرفش نکنن، راهی جز صبر کردن نداریم.
+            <br><br>
+            اگر چند بار در ساعات مختلف امتحان کردید و باز هم خطا گرفتید، فعلاً از مدل <b>Gemini 3 Flash Preview</b> استفاده کنید. کیفیت ترجمهاش خوبه و با دردسر کمتری کار میکنه.
+            <br><br>
+            📌 <b>نحوه انتخاب:</b> برای استفاده از این مدل، کافیه برید توی <b>تنظیمات پیشرفته</b>، بخش <b>مدل‌های هوش مصنوعی</b> رو پیدا کنید و گزینه <b>Gemini 3 Flash Preview</b> رو انتخاب کنید.
+        </p>
+       
+        <div style="margin-top: 20px;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                <input type="checkbox" id="modal-ack-checkbox" style="width: 18px; height: 18px;">
+                متوجه شدم
+            </label>
+        </div>
+
+        <button id="modal-close-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #4dabf7; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+            تایید و بستن
+        </button>
+    </div>
+</div>
+<!-- END: پنجره هشدار شروع برنامه -->
     
     <script src="script.js"></script>
 </body>
