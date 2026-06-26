@@ -1687,7 +1687,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 // منطق نمایش پنجره هشدار شروع برنامه
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('startup-modal2');
+    const modal = document.getElementById('startup-modal');
     const closeBtn = document.getElementById('modal-close-btn');
     const checkbox = document.getElementById('modal-ack-checkbox'); 
     const STORAGE_KEY = 'google_limit_warning_v3.7';
