@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ترجمه خودکار زیرنویس انیمه با Gemini</title>
+	  <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1><span class="icon">🚀</span> ترجمه خودکار زیرنویس انیمه</h1>
+            <p class="subtitle">زیرنویس‌های خود را با قدرت مدل‌های Gemini به فارسی روان ترجمه کنید</p>
+        </header>
+
+        <main>
+            <section id="upload-section" class="card">
+                <div class="section-header">
+                    <h2>۱. انتخاب فایل</h2>
+                    <div class="help-tooltip-container">
+                        <span class="help-icon">؟</span>
+                        <div class="help-tooltip-text">
+                            می‌توانید فایل زیرنویس (srt, ass) یا فایل ویدیویی (mkv, mp4) را انتخاب کنید.
+                            <br>
+                            <b>نکته مهم:</b> فایل ویدیویی شما هرگز به هیچ سروری آپلود نمی‌شود و تمام مراحل تحلیل و استخراج زیرنویس به صورت کاملاً محلی در مرورگر شما انجام می‌گردد.
+                        </div>
+                    </div>
+                </div>
+                <div id="drop-zone">
+                    <p>فایل انیمه (mkv , mp4) و یا فایل زیرنویس (srt , ass) را به اینجا بکشید یا برای انتخاب کلیک کنید</p>
+                    <input type="file" id="file-input" accept=".srt,.ass,.mkv,.mp4" hidden>
+                    <p id="file-name-display"></p>
+                </div>
+            </section>
+
+       <section id="api-key-section" class="card">
+                <div class="section-header">
+                    <h2>۲. کلید Google AI</h2>
+
+                </div>
+                   
+<details class="api-guide-details">
+    <summary>
+        <span class="summary-text">راهنمای دریافت کلید API رایگان</span>
+		                    <div class="help-tooltip-container">
+                        <span class="help-icon">  
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"></path>
+                            </svg>
+                        </span>
+                        <div class="help-tooltip-text video-tooltip">
+                            <video width="400" autoplay loop muted playsinline>
+                                <source src="api_key_guide.mp4" type="video/mp4">
+                            </video>
+                        </div>
+                    </div>
+    </summary>
+    <div class="api-guide-content">
+        <p class="description">
+            برای دریافت کلید رایگان، مراحل زیر را دنبال کنید:
+            <br><small style="color:#bbb;">اگر با مراحل زیر آشنایی ندارید، روی آیکون دوربین بالا بزنید تا آموزش ویدیویی آن را ببینید.</small>
+        </p>
+        <ol class="api-guide-list">
+            <li>ابتدا به <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer">این آدرس</a> بروید.</li>
+            <li>روی دکمه <strong>Create API key</strong> کلیک کنید.</li>
+            <li>در پنجره‌ی بازشده، یک پروژه جدید بسازید (<strong>Create project</strong>).</li>
+            <li>سپس در همان پروژه، کلید خود را بسازید. آن را کپی کرده و در کادر زیر وارد کنید.</li>
+        </ol>
+        <p class="api-guide-note">
+            <strong>نکته مهم:</strong> به دلیل تحریم‌ها، برای ورود به این سایت و دریافت کلید، حتماً از یک <strong>فیلترشکن قوی</strong> استفاده کنید.
+            <br>کلید شما فقط در حافظه‌ی مرورگر ذخیره می‌شود و به هیچ سروری ارسال نخواهد شد.
+        </p>
+    </div>
+</details>
+		   
+  <!-- START: بخش اصلاح شده برای کادر API با دکمه جداگانه -->
+<div class="api-section-wrapper">
+    <div class="api-key-container">
+        <input type="password" id="api-key-input" placeholder="کلید API خود را اینجا وارد کنید...">
+    </div>
+      
+    <button id="toggle-api-key-visibility" class="api-key-toggle-btn" title="نمایش/عدم نمایش کلید">
+        <!-- آیکون چشم باز -->
+        <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3C17.5228 3 22 7.47715 22 12C22 16.5228 17.5228 21 12 21C6.47715 21 2 16.5228 2 12C2 7.47715 6.47715 3 12 3ZM12 19C16.4183 19 20 15.4183 20 12C20 8.58172 16.4183 5 12 5C7.58172 5 4 8.58172 4 12C4 15.4183 7.58172 19 12 19ZM12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z"></path>
+        </svg>
+        
+        <!-- آیکون چشم خط‌خورده -->
+        <svg id="eye-slashed" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+            <path d="M12 2.042c5.94 0 10.5 4.394 10.5 9.958 0 1.58-.42 3.069-1.173 4.39l2.258 2.258a1.5 1.5 0 0 1-2.121 2.121L2.121 3.435A1.5 1.5 0 0 1 4.243 1.314l2.628 2.628A9.422 9.422 0 0 1 12 2.042Zm0 2.458a6.936 6.936 0 0 0-3.364.928l2.946 2.946A3.5 3.5 0 0 1 12 10a3.5 3.5 0 0 1-.309.004l1.83 1.83A6.5 6.5 0 0 0 19.5 12c0-3.59-2.91-6.5-6.5-6.5h-1Zm-8.086 4.316 2.138 2.138A3.501 3.501 0 0 0 5.5 12a3.5 3.5 0 0 0 3.5 3.5c.34 0 .67-.048.985-.14l2.13 2.13A6.932 6.932 0 0 1 4.5 12c0-1.558.514-2.978 1.414-4.184ZM1.5 12C1.5 6.434 6.06 2.042 12 2.042a9.422 9.422 0 0 1 5.129 1.56l-1.84 1.84A6.932 6.932 0 0 0 4.5 12c0 3.59 2.91 6.5 6.5 6.5.992 0 1.93-.223 2.782-.628l-1.52-1.52c-.41.09-.83.148-1.262.148a3.5 3.5 0 0 1-3.5-3.5c0-.432.058-.852.148-1.263l-2.02-2.02A9.408 9.408 0 0 0 1.5 12Z"/>
+        </svg>
+    </button>
+</div>
+
+            </section>
+
+           <section id="control-section">
+               <details class="advanced-settings-details">
+                 <summary>
+                   <span class="summary-text">تنظیمات پیشرفته</span>
+                 </summary>
+                 <div class="advanced-settings card">
+                     
+                     
+                     <div class="settings-group">
+                         <div class="setting">
+                             <label>مدل هوش مصنوعی</label>
+                             <p class="description">مدل مورد نظر را انتخاب کنید یا مدل جدیدی اضافه نمایید.</p>
+                             <div id="model-list"></div>
+                             <button id="add-model-btn" class="secondary-btn">+ افزودن مدل جدید</button>
+                         </div>
+                         <div class="setting">
+                           <label>حالت تفکر عمیق (Thinking Mode)</label>
+                             <div class="safety-setting-item">
+                              <input type="checkbox" id="thinking-mode-toggle" checked>
+                                <div class="label-group">
+                                  <label id="thinking-mode-label">فعال‌سازی حالت تفکر عمیق</label>
+                                    <div class="help-tooltip-container">
+                                      <span class="help-icon">؟</span>
+                                        <div class="help-tooltip-text">
+                                          وقتی فعال باشد، مدل قبل از ارائه پاسخ نهایی، یک "فرایند تفکر داخلی" را با بالاترین حد ممکن برای درک بهتر متن و استدلال پیچیده طی می‌کند.
+                                           <br>
+                                           <b>این گزینه برای مدل Gemini 3.5 Flash بهتر است فعال باشد.</b>
+                                    </div>
+                                   </div>
+                                </div>
+                             </div>
+                          </div>
+                     </div>
+
+                     
+                     <div class="settings-group">
+                         <h3 class="group-title">تنظیمات مدل هوش مصنوعی</h3>
+                         
+                         <div class="sliders-grid">
+                             <div class="setting">
+                                 <div class="setting-label">
+                                     <label for="temperature-slider">دما (Temperature): <span id="temp-value">0.7</span></label>
+                                     <div class="help-tooltip-container"><span class="help-icon">؟</span><div class="help-tooltip-text">میزان خلاقیت یا تصادفی بودن متن خروجی را تعیین می‌کند.<br>مقادیر پایین‌تر (نزدیک به ۰) باعث تولید متنی قابل پیش‌بینی‌تر و متمرکزتر می‌شود، در حالی که مقادیر بالاتر (نزدیک به ۱) متنی متنوع‌تر و خلاقانه‌تر ایجاد می‌کند.<br><b>مقدار پیشفرض: 0.7</b></div></div>
+                                 </div>
+                                 <input type="range" id="temperature-slider" min="0" max="1" step="0.1" value="0.7">
+                             </div>
+                             
+                             <div class="setting">
+                                  <div class="setting-label">
+                                     <label for="top-p-slider">Top-P: <span id="top-p-value">0.9</span></label>
+                                     <div class="help-tooltip-container"><span class="help-icon">؟</span><div class="help-tooltip-text">یک روش نمونه‌برداری است که در آن مدل، مجموعه‌ای از محتمل‌ترین کلمات را که مجموع احتمال آن‌ها به عدد TopP می‌رسد، در نظر می‌گیرد.<br>برای مثال، مقدار 0.9 باعث می‌شود فقط کلماتی که در 90% بالای توزیع احتمال قرار دارند، برای تولید انتخاب شوند.<br>این روش به کنترل تنوع متن کمک کرده و جایگزین مناسبی برای Temperature است.<br><b>مقدار پیشفرض: 0.9</b></div></div>
+                                 </div>
+                                 <input type="range" id="top-p-slider" min="0" max="1" step="0.05" value="0.9">
+                             </div>
+                         </div>
+
+                         <div class="setting safety-wrapper">
+                             <details class="safety-settings-details">
+                                 <summary>
+                                     <span class="summary-text">تنظیمات ایمنی (Safety Settings)</span>
+                                     <div class="help-tooltip-container">
+                                         <span class="help-icon">؟</span>
+                                         <div class="help-tooltip-text">
+                                             این تنظیمات به شما اجازه می‌دهد فیلترهای محتوای پیش‌فرض Gemini را غیرفعال کنید.
+                                             <br><b>هشدار:</b> با مسئولیت خود استفاده کنید.
+                                             <br><b>نکته:</b> فعال کردن هر یک از این گزینه‌ها، زمان دریافت ترجمه را افزایش می‌دهد.
+                                         </div>
+                                     </div>
+                                 </summary>
+                                 <div class="safety-settings-content">
+                                     <div class="safety-setting-item">
+                                         <input type="checkbox" id="safety-harassment-toggle">
+                                         <div class="label-group">
+                                             <label>آزار و اذیت (Harassment)</label>
+                                             <div class="help-tooltip-container">
+                                                 <span class="help-icon">؟</span>
+                                                 <div class="help-tooltip-text">محتوایی که افراد را مورد هدف قرار داده و به آن‌ها توهین می‌کند یا آن‌ها را می‌ترساند.</div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <div class="safety-setting-item">
+                                         <input type="checkbox" id="safety-hate-speech-toggle">
+                                         <div class="label-group">
+                                             <label>سخنان نفرت‌پراکن (Hate Speech)</label>
+                                             <div class="help-tooltip-container">
+                                                 <span class="help-icon">؟</span>
+                                                 <div class="help-tooltip-text">محتوایی که بر اساس هویت یک گروه (مانند نژاد، مذهب و...) به آن‌ها توهین کرده یا خشونت را ترویج می‌دهد.</div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <div class="safety-setting-item">
+                                         <input type="checkbox" id="safety-sexually-explicit-toggle">
+                                         <div class="label-group">
+                                              <label>محتوای جنسی (Sexually Explicit)</label>
+                                             <div class="help-tooltip-container">
+                                                 <span class="help-icon">؟</span>
+                                                 <div class="help-tooltip-text">محتوایی که شامل توصیفات جنسی صریح یا موارد مشابه است.</div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                     <div class="safety-setting-item">
+                                         <input type="checkbox" id="safety-dangerous-content-toggle">
+                                         <div class="label-group">
+                                             <label>محتوای خطرناک (Dangerous)</label>
+                                             <div class="help-tooltip-container">
+                                                 <span class="help-icon">؟</span>
+                                                 <div class="help-tooltip-text">محتوایی که به خودآزاری، خشونت شدید یا فعالیت‌های غیرقانونی خطرناک تشویق می‌کند.</div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </details>
+                         </div>
+                     </div>
+
+                     
+                     <div class="settings-group">
+                         <div class="setting">
+                             <label>پرامپت سیستم</label>
+                             <p class="description">پرامپت پیش‌فرض را استفاده کنید یا پرامپت سفارشی خود را اضافه و ویرایش نمایید.</p>
+                             <div id="prompt-list"></div>
+                             <button id="add-prompt-btn" class="secondary-btn">+ افزودن پرامپت جدید</button>
+                             <label class="prompt-display-label">محتوای پرامپت (برای ویرایش پرامپت سفارشی، آن را از لیست بالا انتخاب کنید):</label>
+                             <textarea id="prompt-display-area" rows="10"></textarea>
+                         </div>
+                     </div>
+
+                     
+                     <div class="settings-group danger-zone">
+                          <div class="setting">
+                             <label>بازنشانی تنظیمات</label>
+                              <p class="description">با کلیک روی این دکمه، تمام تنظیمات سفارشی شما (شامل کلید API، لیست مدل‌ها و لیست پرامپت‌ها) حذف شده و برنامه به حالت اولیه بازمی‌گردد.</p>
+                             <button id="reset-all-btn" class="secondary-btn">بازنشانی کل تنظیمات به حالت اولیه</button>
+                          </div>
+                     </div>
+
+                 </div>
+               </details>
+
+<!-- تنظیمات پروکسی -->
+<div class="proxy-setting-container">
+    <input type="checkbox" id="proxy-toggle">
+    <label id="proxy-label">پروکسی Cloudflare</label>
+    <div class="help-tooltip-container">
+        <span class="help-icon">؟</span>
+        <div class="help-tooltip-text">
+            این گزینه تمام درخواست‌ها را از طریق یک سرور واسط (Cloudflare) ارسال می‌کند.
+            <br>
+            این کار می‌تواند به <b>دور زدن تحریم‌ها</b> و <b>رفع مشکلات شبکه</b> کمک کند و دیگر نیازی به فیلترشکن نخواهید داشت.
+            <br>
+            برای استفاده از این گزینه، اتصال به اینترنت پایدار و بدون اختلال لازم است.
+        </div>
+    </div>
+</div>
+
+<!-- START: بخش جدید برای انتخاب فرمت خروجی -->
+<div id="output-format-selector" class="setting hidden">
+    <label>فرمت فایل خروجی</label>
+    <p class="description">چون ورودی شما از نوع ASS است، می‌توانید انتخاب کنید که خروجی نیز با حفظ استایل‌ها به صورت ASS ذخیره شود.</p>
+    <div class="radio-group">
+	 <label>
+            <input type="radio" name="output-format" value="ass"  checked>
+            ASS (حفظ استایل‌ها - حرفه‌ای و زیبا)
+        </label>
+        <label>
+            <input type="radio" name="output-format" value="srt">
+            SRT (معمولی - سریع و ساده)
+        </label>
+       
+    </div>
+</div>
+
+
+                <p id="vpn-warning-text" class="description" style="text-align: center; font-weight: bold; color: var(--accent-color); margin-top: 1rem;">توجه: فیلترشکن شما باید در تمام طول فرآیند ترجمه روشن باقی بماند.</p>
+                <button id="translate-btn" disabled>
+                    <span class="icon">⚡️</span> شروع ترجمه
+                </button>
+            </section>
+
+            <section id="progress-section" class="card hidden">
+                <h2 id="progress-title">در حال ترجمه...</h2>
+                <div class="progress-container">
+                    <div id="progress-bar">
+                        <div id="progress-bar-fill"></div>
+                    </div>
+                    <span id="progress-text">۰٪</span>
+                </div>
+                <pre id="live-output"></pre>
+                <!-- New Stop Button -->
+                <button id="stop-translation-btn" class="secondary-btn hidden">
+                    <span class="icon">⛔</span> توقف ترجمه
+                </button>
+                <!-- New Status Message -->
+                <p id="translation-status-message" class="hidden"></p>
+                <button id="download-btn" class="hidden"><span class="icon">📥</span> دانلود فایل زیرنویس نهایی</button>
+            </section>
+
+           <div id="error-display" class="hidden">
+    <p>خطایی رخ داد!</p>
+    <div id="error-message"></div>
+           </div>
+        </main>
+
+                  
+        <footer>
+            <div class="stats-container" style="text-align: center; margin: 2rem 0; display: flex; justify-content: space-around;">
+    
+    <div class="stat-item">
+        <span id="downloads-counter" style="font-size: 2rem; font-weight: bold; color: #ff477e;">...</span>
+          <p style="color: #a0a0a0; margin-top: 0.5rem;">تعداد ترجمه‌های موفق</p>
+    </div>
+            </div>
+            <hr class="footer-hr">
+            <div class="footer-text-container">
+                <p>این پروژه با عشق به دنیای انیمه توسط <b>Kthree</b> ساخته شده است. اگر این ابزار به شما کمک کرد، باعث خوشحالی من است.</p>
+                <p>Made with ❤️ by Kthree</p>
+                <p class="attribution">
+                    این ابزار، نسخه توسعه‌یافته بر اساس 
+                    <a href="https://github.com/Kthree-K3/Anime-Subtitle-Translator-To-Persian" target="_blank" rel="noopener noreferrer">این پروژه</a>
+                     می‌باشد.
+              </p>
+            </div>
+            <hr class="footer-hr">
+            <div class="button-group">
+                <a href="https://github.com/Kthree-K3/Anime-Subtitle-Translation-To-Persian-Webpage" target="_blank" class="btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+                    <span>گیت‌هاب</span>
+                </a>
+            </div>
+        </footer>
+      
+    </div>
+
+
+<!-- START: پنجره هشدار شروع برنامه -->
+<div id="startup-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: #251015; border: 2px solid #4dabf7; padding: 25px; border-radius: 12px; max-width: 400px; width: 80%; color: #fff; text-align: right; box-shadow: 0 0 20px rgba(77, 171, 247, 0.4);">
+       <h3 style="color: #4dabf7; margin-top: 0;">⚠️ مشکل موقت سرویس Gemini 3.5 Flash</h3>
+        
+        <p style="line-height: 1.7; font-size: 0.95rem;">
+			📅 ۱۴۰۵/۰۴/۰۵
+             <br>
+			این روزها مدل <b>Gemini 3.5 Flash</b> به خاطر استقبال جهانی بالا، گاهی با خطای «شلوغی سرور (ترافیک بالا)» مواجه میشه.
+            <br><br>
+            این مشکل مربوط به سرورهای گوگله و تا وقتی خودشون برطرفش نکنن، راهی جز صبر کردن نداریم.
+            <br><br>
+            اگر چند بار در ساعات مختلف امتحان کردید و باز هم خطا گرفتید، فعلاً از مدل <b>Gemini 3 Flash Preview</b> استفاده کنید. کیفیت ترجمهاش خوبه و با دردسر کمتری کار میکنه.
+            <br><br>
+            📌 <b>نحوه انتخاب:</b> برای استفاده از این مدل، کافیه برید توی <b>تنظیمات پیشرفته</b>، بخش <b>مدل‌های هوش مصنوعی</b> رو پیدا کنید و گزینه <b>Gemini 3 Flash Preview</b> رو انتخاب کنید.
+        </p>
+       
+       
+        <div style="margin-top: 20px;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                <input type="checkbox" id="modal-ack-checkbox" style="width: 18px; height: 18px;">
+                متوجه شدم
+            </label>
+        </div>
+
+        <button id="modal-close-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #4dabf7; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+           تایید و بستن
+        </button>
+    </div>
+</div>
+<!-- END: پنجره هشدار شروع برنامه -->
+
+	    
+    <script src="script.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
