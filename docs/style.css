@@ -1002,3 +1002,79 @@ hr.footer-hr {
     color: var(--subtle-text-color);
     line-height: 1.6;
 }
+
+
+.settings-group {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    background-color: rgba(255, 255, 255, 0.015);
+    transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+.settings-group:last-child {
+    margin-bottom: 0;
+}
+
+
+.settings-group:hover {
+    background-color: rgba(255, 255, 255, 0.025);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+
+.group-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.5rem;
+}
+
+
+.sliders-grid {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.sliders-grid .setting {
+    flex: 1;
+    margin-bottom: 0 !important;
+}
+
+
+@media (max-width: 600px) {
+    .sliders-grid {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+
+.safety-wrapper {
+    margin-top: 1.5rem;
+    margin-bottom: 0 !important;
+}
+
+
+.settings-group.danger-zone {
+    border-color: rgba(255, 82, 82, 0.25);
+    background-color: rgba(255, 82, 82, 0.01);
+}
+
+.settings-group.danger-zone:hover {
+    border-color: var(--error-color);
+    background-color: rgba(255, 82, 82, 0.03);
+}
+
+
+.advanced-settings .setting > label:first-child,
+.advanced-settings .setting .setting-label label {
+    display: block;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
