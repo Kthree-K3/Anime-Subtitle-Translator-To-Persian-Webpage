@@ -1173,7 +1173,7 @@ async function finalizeAssFile(assContent) {
             formData.append('file', fileToUpload);
             // const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
               const proxyEnabled = document.getElementById('proxy-toggle').checked;
-              const GEMINI_BASE_URL = proxyEnabled ? 'interesting-bison-65.kthree-k3.deno.net' : 'https://generativelanguage.googleapis.com';
+              const GEMINI_BASE_URL = proxyEnabled ? 'https://interesting-bison-65.kthree-k3.deno.net' : 'https://generativelanguage.googleapis.com';
               const url = `${GEMINI_BASE_URL}/upload/v1beta/files?key=${apiKey}`;
             
             const xhr = new XMLHttpRequest();
@@ -1210,7 +1210,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     const apiKey = apiKeyInput.value.trim();
     
     const proxyEnabled = document.getElementById('proxy-toggle').checked;
-    const GEMINI_BASE_URL = proxyEnabled ? 'interesting-bison-65.kthree-k3.deno.net' : 'https://generativelanguage.googleapis.com';
+    const GEMINI_BASE_URL = proxyEnabled ? 'https://interesting-bison-65.kthree-k3.deno.net' : 'https://generativelanguage.googleapis.com';
     const url = `${GEMINI_BASE_URL}/v1beta/models/${selectedModelApiName}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
     try {
