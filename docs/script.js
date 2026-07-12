@@ -1074,7 +1074,7 @@ async function finalizeAssFile(assContent) {
     // 1. بررسی خطاهای HTML شناخته شده از سمت پراکسی (Cloudflare)
     if (errorText.trim().startsWith('<!DOCTYPE html>') || errorText.includes('</head>')) {
         if (errorText.includes('Error 524')) {
-            return 'خطای Timeout از پراکسی (Error 524): به نظر می‌رسد پاسخ از سرور گوگل بیش از حد طول کشیده است. این مشکل معمولاً به دلیل ناپایداری در مدل جمنای رخ می‌دهد. لطفاً بدون استفاده از گزینه پروکسی و از طریق یک فیلترشکن قوی‌، دوباره امتحان کنید.';
+          return 'Error 524';
         }
         if (errorText.includes('Error 522')) {
             return 'خطای Connection Timeout از پراکسی (Error 522): پراکسی نتوانست به سرور گوگل متصل شود. لطفاً از فعال بودن فیلترشکن (در صورت عدم استفاده از پراکسی) یا پایداری اینترنت خود اطمینان حاصل کنید.';
@@ -1568,8 +1568,11 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         const errorMessageText = error.message || 'خطایی نامشخص رخ داد.';
 
         if (error.name === 'AbortError') {
-            userFriendlyMessage = '<p>عملیات ترجمه توسط کاربر متوقف شد.</p>';
-            translationStatusMessage.innerHTML = '❌ ترجمه توسط کاربر متوقف شد.';
+           userFriendlyMessage = '<p>عملیات ترجمه توسط کاربر متوقف شد.</p>';
+           translationStatusMessage.innerHTML = '❌ ترجمه توسط کاربر متوقف شد.';
+        } else if (errorMessageText.includes('Error 524')) {
+          userFriendlyMessage = `<p>به نظر می‌رسد پاسخ از سرور گوگل بیش از حد طول کشیده است. این مشکل معمولاً به دلیل ناپایداری در مدل جمنای رخ می‌دهد. لطفاً بدون استفاده از گزینه پروکسی و از طریق یک فیلترشکن قوی‌، دوباره امتحان کنید.</p><pre>خطای Timeout از پراکسی (Error 524)</pre>`;
+          translationStatusMessage.innerHTML = '❌ خطای Timeout از پراکسی (Error 524)';
         } else if (errorMessageText.toLowerCase().includes('location') || errorMessageText.toLowerCase().includes('permission denied')) {
             userFriendlyMessage = `<p class="error-subtitle"><b>خطا در دسترسی (مشکل تحریم یا فیلترشکن).</b></p><pre>${errorMessageText}</pre><p>این خطا به این معنی است که سرورهای گوگل به دلیل موقعیت جغرافیایی شما، اجازه دسترسی نمی‌دهند.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>از روشن و فعال بودن <b>فیلترشکن قوی</b> خود اطمینان حاصل کنید.</li><li>اگر فیلترشکن شما روشن است اما همچنان این خطا را می‌بینید، لطفاً <b>فیلترشکن خود را تغییر دهید</b> یا از یک سرور دیگر در آن استفاده کنید.</li></ol>`;
             translationStatusMessage.innerHTML = '❌ خطای دسترسی/فیلترشکن.';
