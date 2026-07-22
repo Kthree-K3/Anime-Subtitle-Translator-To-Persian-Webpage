@@ -891,16 +891,41 @@ async function finalizeAssFile(assContent) {
         });
     }
     function saveModels() { localStorage.setItem('userModels', JSON.stringify(models)); localStorage.setItem('selectedModel', selectedModelApiName); }
-    function loadModels() { const savedModels = localStorage.getItem('userModels'); const savedSelected = localStorage.getItem('selectedModel'); models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [
-            // --- مدل جدید که می‌خواهید پیش‌فرض باشد (اولی) ---
-           { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },        
-            // --- مدل‌های قبلی ---
-         { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
-        { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' },
-        { displayName: 'Gemini Flash Latest', apiName: 'gemini-flash-latest' }
-                           
-        ];  selectedModelApiName = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; renderModels(); }
-    function selectModel(apiName) { selectedModelApiName = apiName; saveModels(); renderModels(); }
+    function selectModel(apiName) { 
+    selectedModelApiName = apiName; 
+
+    // تنظیم خودکار دما (Temperature) و TopP بر اساس مدل انتخاب شده
+    if (apiName && apiName.toLowerCase().includes('gemini-3.6-flash')) {
+        tempSlider.value = 0.4;
+        tempValue.textContent = '0.4';
+        topPSlider.value = 0.7;
+        topPValue.textContent = '0.7';
+    } else {
+        tempSlider.value = 0.7;
+        tempValue.textContent = '0.7';
+        topPSlider.value = 0.9;
+        topPValue.textContent = '0.9';
+    }
+
+    saveModels(); 
+    renderModels(); 
+}
+
+function loadModels() { 
+    const savedModels = localStorage.getItem('userModels'); 
+    const savedSelected = localStorage.getItem('selectedModel'); 
+    models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [
+        { displayName: 'Gemini 3.6 Flash', apiName: 'gemini-3.6-flash' },        
+        { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },        
+        { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
+        { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' }
+    ];  
+    
+    const initialSelected = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; 
+    
+    // فراخوانی selectModel هنگام لود شدن صفحه تا اسلایدرها هم ست شوند
+    selectModel(initialSelected); 
+}
     function addModel() { const displayName = prompt("یک نام نمایشی برای مدل وارد کنید (مثلا: Gemini Flash):"); if (!displayName) return; const apiName = prompt("نام دقیق API مدل را وارد کنید (مثلا: gemini-1.5-flash-latest):"); if (!apiName) return; if (models.some(m => m.apiName === apiName)) return alert("این مدل از قبل وجود دارد."); models.push({ displayName, apiName }); selectModel(apiName); }
     function deleteModel(index) { if (!confirm(`آیا از حذف مدل "${models[index].displayName}" مطمئن هستید؟`)) return; const deletedModelWasSelected = models[index].apiName === selectedModelApiName; models.splice(index, 1); if (deletedModelWasSelected && models.length > 0) { selectModel(models[0].apiName); } else { saveModels(); renderModels(); } }
 
@@ -1693,7 +1718,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('startup-modal');
     const closeBtn = document.getElementById('modal-close-btn');
     const checkbox = document.getElementById('modal-ack-checkbox'); 
-    const STORAGE_KEY = 'google_limit_warning_v3.7';
+    const STORAGE_KEY = 'google_limit_warning_v3.8';
     
     // فقط نمایش بده اگر کاربر کلید API داره و هنوز هشدار رو ندیده
     const hasApiKey = localStorage.getItem('geminiApiKey');
