@@ -771,16 +771,15 @@ function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
 
 // تابع ۱: افزایش شمارنده (با استفاده از پراکسی و مسیر کامل)
 
-async function incrementCounter(slug) {
+async function incrementCounter() {
     try {
-               await fetch(`${COUNTER_API_PROXY_URL}/v2/anime-translator-project/${slug}/up`);
+        await fetch('https://anime-counter.khalilkhko.workers.dev/v2/anime-translator-project/downloadfile/up');
     } catch (error) {
-        console.error(`Could not increment ${slug} counter:`, error);
+        console.error('Could not increment download counter:', error);
     }
 }
 
 
-// تابع ۲: دریافت و نمایش آمار (با استفاده از پراکسی و مسیر کامل)
 async function displayStats() {
     const downloadsElement = document.getElementById('downloads-counter');
     if (!downloadsElement) return;
@@ -788,7 +787,10 @@ async function displayStats() {
     try {
         const downloadsResponse = await fetch(`${COUNTER_API_PROXY_URL}/v2/anime-translator-project/downloadfile`);
         const downloadsData = await downloadsResponse.json();
-        downloadsElement.textContent = (downloadsData.count || 0).toLocaleString('fa-IR');
+        
+        
+        const count = downloadsData?.data?.up_count || 0;
+        downloadsElement.textContent = count.toLocaleString('fa-IR');
     } catch (error) {
         console.error("Could not fetch stats:", error);
         downloadsElement.textContent = 'N/A';
@@ -1644,7 +1646,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     });
 
         downloadBtn.addEventListener('click', async () => { // <<-- تابع async شد
-        incrementCounter('downloadfile');
+         incrementCounter();
 
         const outputFormatChoice = document.querySelector('input[name="output-format"]:checked').value;
         const useAssPath = isAssInput && outputFormatChoice === 'ass';
