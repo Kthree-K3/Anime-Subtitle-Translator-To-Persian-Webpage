@@ -773,7 +773,7 @@ function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
 
 async function incrementCounter(slug) {
     try {
-               await fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/${slug}/up`);
+               await fetch(`${COUNTER_API_PROXY_URL}/v2/anime-translator-project/${slug}/up`);
     } catch (error) {
         console.error(`Could not increment ${slug} counter:`, error);
     }
@@ -786,7 +786,7 @@ async function displayStats() {
     if (!downloadsElement) return;
 
     try {
-        const downloadsResponse = await fetch(`${COUNTER_API_PROXY_URL}/v1/anime-translator-project/downloadfile`);
+        const downloadsResponse = await fetch(`${COUNTER_API_PROXY_URL}/v2/anime-translator-project/downloadfile`);
         const downloadsData = await downloadsResponse.json();
         downloadsElement.textContent = (downloadsData.count || 0).toLocaleString('fa-IR');
     } catch (error) {
