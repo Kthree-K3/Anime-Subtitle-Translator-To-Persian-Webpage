@@ -788,9 +788,14 @@ async function displayStats() {
         const downloadsResponse = await fetch(`${COUNTER_API_PROXY_URL}/v2/anime-translator-project/downloadfile`);
         const downloadsData = await downloadsResponse.json();
         
+       
+        const rawCount = downloadsData?.data?.up_count || 0;
         
-        const count = downloadsData?.data?.up_count || 0;
-        downloadsElement.textContent = count.toLocaleString('fa-IR');
+        // جمع با مقدار API v1
+        const totalCount = rawCount + 2788;
+        
+        
+        downloadsElement.textContent = totalCount.toLocaleString('fa-IR');
     } catch (error) {
         console.error("Could not fetch stats:", error);
         downloadsElement.textContent = 'N/A';
