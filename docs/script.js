@@ -773,7 +773,7 @@ function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
 
 async function incrementCounter() {
     try {
-        await fetch('https://anime-counter.khalilkhko.workers.dev/v2/anime-translator-project/downloadfile/up');
+        await fetch('${COUNTER_API_PROXY_URL}/v2/anime-translator-project/downloadfile/up');
     } catch (error) {
         console.error('Could not increment download counter:', error);
     }
