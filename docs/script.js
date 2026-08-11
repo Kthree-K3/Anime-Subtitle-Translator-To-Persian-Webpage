@@ -773,7 +773,7 @@ function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
 
 async function incrementCounter() {
     try {
-        await fetch('${COUNTER_API_PROXY_URL}/v2/anime-translator-project/downloadfile/up');
+        await fetch(`${COUNTER_API_PROXY_URL}/v2/anime-translator-project/downloadfile/up`);
     } catch (error) {
         console.error('Could not increment download counter:', error);
     }
@@ -787,13 +787,11 @@ async function displayStats() {
     try {
         const downloadsResponse = await fetch(`${COUNTER_API_PROXY_URL}/v2/anime-translator-project/downloadfile`);
         const downloadsData = await downloadsResponse.json();
-        
-       
-        const rawCount = downloadsData?.data?.up_count || 0;
+
+        const rawCount = downloadsData?.value || downloadsData?.data?.up_count || 0;
         
         // جمع با مقدار API v1
         const totalCount = rawCount + 2788;
-        
         
         downloadsElement.textContent = totalCount.toLocaleString('fa-IR');
     } catch (error) {
