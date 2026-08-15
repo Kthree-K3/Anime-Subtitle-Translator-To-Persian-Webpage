@@ -77,7 +77,7 @@ proxyToggle.addEventListener('change', () => {
     // --- 2. ثابت‌ها و متغیرهای اصلی ---
     
    
-const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.workers.dev'; 
+const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.qzz.io'; 
     // IMPORTANT: DO NOT MODIFY THIS PROMPT. IT IS HIGHLY OPTIMIZED.
     const DEFAULT_PROMPT = `پرامپت پیشرفته و یکپارچه برای ترجمه حرفه‌ای زیرنویس انیمه (فرمت 'میکرو دی وی دی') 
 
@@ -1204,7 +1204,7 @@ function loadModels() {
             formData.append('file', fileToUpload);
             // const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
               const proxyEnabled = document.getElementById('proxy-toggle').checked;
-              const GEMINI_BASE_URL = proxyEnabled ? 'https://anime-translator-web.khalilkhko.workers.dev' : 'https://generativelanguage.googleapis.com';
+              const GEMINI_BASE_URL = proxyEnabled ? 'https://anime-translator-web.khalilkhko.qzz.io' : 'https://generativelanguage.googleapis.com';
               const url = `${GEMINI_BASE_URL}/upload/v1beta/files?key=${apiKey}`;
             
             const xhr = new XMLHttpRequest();
@@ -1241,7 +1241,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     const apiKey = apiKeyInput.value.trim();
     
     const proxyEnabled = document.getElementById('proxy-toggle').checked;
-    const GEMINI_BASE_URL = proxyEnabled ? 'https://anime-translator-web.khalilkhko.workers.dev' : 'https://generativelanguage.googleapis.com';
+    const GEMINI_BASE_URL = proxyEnabled ? 'https://anime-translator-web.khalilkhko.qzz.io' : 'https://generativelanguage.googleapis.com';
     const url = `${GEMINI_BASE_URL}/v1beta/models/${selectedModelApiName}:streamGenerateContent?alt=sse&key=${apiKey}`;
 
     try {
