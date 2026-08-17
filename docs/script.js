@@ -1614,7 +1614,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             userFriendlyMessage = `<p class="error-subtitle"><b>خطای موقتی از سوی سرور گوگل (Overloaded)</b></p><pre>${errorMessageText}</pre><p>این خطا معمولاً به دلیل ترافیک بسیار بالای لحظه‌ای روی سرورهای گوگل رخ می‌دهد.</p><p class="error-solution-title"><b>راه حل پیشنهادی:</b></p><ol><li>چند دقیقه صبر کرده و دوباره امتحان کنید.</li><li>اگر مشکل تکرار شد، ممکن است به دلیل پیچیدگی خاص فایل شما باشد. لطفاً فایل زیرنویس را به صورت دستی (با نرم‌افزار Subtitle Edit) به فرمت <b>.srt</b> تبدیل کرده و سپس آن را در برنامه انتخاب کنید.</li></ol>`;
             translationStatusMessage.innerHTML = '❌ خطای موقتی سرور.';
         } else if (errorMessageText.toLowerCase().includes('high demand')) {
-            userFriendlyMessage = `<p>این مدل در حال حاضر ترافیک و تقاضای بالایی را تجربه می‌کند. این افزایش تقاضا معمولاً موقتی است. لطفاً کمی بعد دوباره تلاش کنید.</p>
+            userFriendlyMessage = `<p>این مدل در حال حاضر ترافیک و تقاضای بالایی را تجربه می‌کند. این افزایش تقاضا معمولاً موقتی است. لطفاً کمی بعد دوباره تلاش کنید و یا به تنظیمات پیشرفته بروید و مدل را تغییر دهید.</p>
             <pre>${errorMessageText}</pre>`;
             translationStatusMessage.innerHTML  = '❌ شلوغی سرور (ترافیک بالا)';
         } else if (errorMessageText.toLowerCase().includes('thinking level')) {
