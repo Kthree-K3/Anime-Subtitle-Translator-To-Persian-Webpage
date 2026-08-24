@@ -367,6 +367,43 @@
 </div>
 <!-- END: پنجره هشدار شروع برنامه -->
 
+<!-- START: پنجره هشدار شروع برنامه -->
+<div id="startup-modal2" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: #251015; border: 2px solid #4dabf7; padding: 25px; border-radius: 12px; max-width: 420px; width: 85%; color: #fff; text-align: right; box-shadow: 0 0 20px rgba(77, 171, 247, 0.4);">
+        <h3 style="color: #4dabf7; margin-top: 0; font-size: 1.15rem;">✨ اطلاعیه درباره مدل Gemini 3.7 Flash</h3>
+        
+       <p style="line-height: 1.7; font-size: 0.95rem;">
+            این روزها احتمالاً بسیاری از شما هنگام استفاده از Gemini 3.7 Flash با خطای «شلوغی سرور» مواجه شده‌اید.
+            <br><br>
+            • این مشکل به دلیل محبوبیت بالای مدل و کمبود ظرفیت سرورهای گوگل است.
+            <br>
+            • اگر چند بار در ساعات مختلف امتحان کردید و باز هم خطا گرفتید، از نسخه‌های <b>Gemini 3.5 Flash</b> یا <b>Gemini 3.6 Flash</b> استفاده کنید.
+            <br>
+            • این مدل‌ها ترجمه‌های قابل قبول و باکیفیتی دارند و با دردسر کمتری کارتان را پیش می‌برند.
+</p>
+        <div style="background: rgba(255, 255, 255, 0.1); padding: 12px; border-radius: 8px; margin: 15px 0;">
+            <strong style="color: #ffda79;">📌 روش تغییر مدل:</strong>
+            <ol style="margin: 8px 20px 5px 0; font-size: 0.9rem; line-height: 1.6;">
+                <li>به بخش <b>تنظیمات پیشرفته</b> بروید.</li>
+                <li>از بین مدل‌های موجود، گزینه <b>Gemini 3.5 Flash</b> یا <b>Gemini 3.6 Flash</b> را انتخاب کنید.</li>
+            </ol>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                <input type="checkbox" id="modal-ack-checkbox" style="width: 18px; height: 18px;">
+                متوجه شدم (عدم نمایش مجدد)
+            </label>
+        </div>
+
+        <button id="modal-close-btn" style="width: 100%; margin-top: 15px; padding: 10px; background: #4dabf7; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.95rem;">
+           تایید و بستن
+        </button>
+    </div>
+</div>
+<!-- END: پنجره هشدار شروع برنامه -->
+	
+
 	    
     <script src="script.js"></script>
 </body>
