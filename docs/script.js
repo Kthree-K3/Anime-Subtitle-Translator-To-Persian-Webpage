@@ -1722,8 +1722,8 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('startup-modal2');
-    const closeBtn = document.getElementById('modal-close-btn');
-    const checkbox = document.getElementById('modal-ack-checkbox'); 
+    const closeBtn = document.getElementById('modal-close-btn2');
+    const checkbox = document.getElementById('modal-ack-checkbox2'); 
     const STORAGE_KEY = 'google_limit_warning_v4.0';
     
     // فقط نمایش بده اگر کاربر کلید API داره و هنوز هشدار رو ندیده
