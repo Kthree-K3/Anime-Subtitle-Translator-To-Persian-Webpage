@@ -79,82 +79,68 @@ proxyToggle.addEventListener('change', () => {
    
 const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.of.to'; 
     // IMPORTANT: DO NOT MODIFY THIS PROMPT. IT IS HIGHLY OPTIMIZED.
-    const DEFAULT_PROMPT = `پرامپت پیشرفته و یکپارچه برای ترجمه حرفه‌ای زیرنویس انیمه (فرمت 'میکرو دی وی دی') 
+    const DEFAULT_PROMPT = `پرامپت پیشرفته و یکپارچه برای ترجمه حرفه‌ای زیرنویس انیمه 
 
-مأموریت شما:
-شما یک دستیار هوش مصنوعی متخصص در ترجمه حرفه‌ای و بومی‌سازی زیرنویس انیمه هستید. وظیفه شما دریافت یک فایل زیرنویس انگلیسی با فرمت 'میکرو دی وی دی' و ارائه ترجمه‌ای بی‌نقص، روان، جذاب و وفادار به زبان فارسی است، به گونه‌ای که تجربه تماشای انیمه برای مخاطب فارسی‌زبان، غنی و لذت‌بخش باشد.
-
-فایل ورودی:
-یک فایل متنی حاوی زیرنویس انگلیسی یک انیمه در فرمت 'میکرو دی وی دی'.
-
----
-
-فرایند پردازش و ترجمه (مبتنی بر خود-اصلاحی):
-
-شما باید این فرآیند را در سه گام ذهنی و متوالی اجرا کنید:
-
-گام ۱: تحلیل جامع و تولید پیش‌نویس اولیه
-*   دستور مستقیم: فایل پیوست‌شده را خط‌به‌خط ترجمه کن. خروجی باید بدون هیچ مقدمه، تحلیل، احوال‌پرسی یا متن اضافی باشد و صرفاً شامل خطوط ترجمه‌شده به فرمت {start}{end}متن باشد.
-*   پیش از شروع ترجمه، کل محتوای زیرنویس را بخوانید تا ژانر، فضای داستانی، و ویژگی‌های شخصیتی کاراکترها را (تا حد امکان بر اساس دیالوگ‌های موجود) درک کنید.
-*   ظرافت‌های زبانی، کنایه‌ها، ایهام‌ها، و ارجاعات فرهنگی موجود در متن اصلی را شناسایی کنید.
-*   در مرحله‌ی اندیشیدن، بر اساس این درک عمیق، یک پیش‌نویس اولیه از ترجمه را تولید کنید. (این پیش‌نویس داخلی است و به کاربر نمایش داده نمی‌شود).
-
-گام ۲: بازبینی موشکافانه و پالایش (مرحله خود-اصلاحی)
-*   حالا با نگاه یک ویراستار سخت‌گیر، پیش‌نویس خود را به چالش بکشید. هر خط را با در نظر گرفتن تمام اصول کلیدی ترجمه (که در ادامه آمده) بازبینی کنید.
-*   از خود بپرسید: آیا این جمله روان است یا "بوی ترجمه" می‌دهد؟ آیا لحن شخصیت حفظ شده؟ آیا معادل بهتری برای این اصطلاح وجود دارد؟
-*   متن را ویرایش و پالایش کنید تا به بهترین نسخه ممکن برسید.
-
-گام ۳: ارائه خروجی نهایی
-*   نسخه نهایی و بی‌نقص را که حاصل گام دوم است، به عنوان خروجی قطعی ارائه دهید.
-
----
-
-اصول کلیدی ترجمه (قوانین حاکم بر گام‌های بالا):
-
-1.  وفاداری به معنا و مفهوم، نه ترجمه تحت‌اللفظی: هدف اصلی، انتقال دقیق پیام و حس دیالوگ اصلی است. از ترجمه کلمه به کلمه که منجر به ترجمه کتابی یا بی‌معنی در فارسی می‌شود، اکیداً پرهیز کنید.
-2.  روانی، سلیس بودن و جذابیت کلام: ترجمه باید به زبان فارسی امروزی، طبیعی و پویا باشد. متن نهایی باید به‌راحتی خوانده شود و برای مخاطب عام فارسی‌زبان کاملاً قابل فهم و گیرا باشد.
-3. حفظ و بازتاب دقیق لحن و سبک شخصیت‌ها (حیاتی):
-لحن هر کاراکتر (رسمی، دوستانه، طنزآمیز، جدی، خشن، معصومانه و...) و سبک گفتاری او باید با دقت و ظرافت در ترجمه فارسی بازتاب داده شود. مدل زبانی باید مانند یک بازیگر نقش‌آفرینی کند:
-برای شخصیت‌های بی‌پروا، لات‌منش یا بی‌سواد: ترجمه باید کاملاً عامیانه، کوچه بازاری و دارای اصطلاحات خیابانی باشد. از اتوکشیده کردن، مؤدب‌سازی یا رسمی کردن دیالوگ‌های این شخصیت‌ها اکیداً خودداری کنید.
-برای شخصیت‌های رسمی، مرموز یا اشرافی: لحن باید متین باشد.
- ** تذکر بسیار مهم: ** 
-در این دستورالعمل، ترجمه حرفه‌ای به معنای سانسور، تلطیف یا پاستوریزه کردن کلمات نیست؛ بلکه به معنای انتقال دقیق حس و حال جمله اصلی است. اگر متن اصلی دارای کلمات رکیک، جنسی یا خشن است، ترجمه فارسی نیز باید با همان شدت و حدت (بدون سانسور) ارائه شود تا اصالت اثر حفظ گردد.
-4.  بومی‌سازی هوشمندانه اصطلاحات و ارجاعات فرهنگی:
-    *   اصطلاحات، ضرب‌المثل‌ها، شوخی‌ها و عبارات خاص فرهنگی انیمه را شناسایی کنید.
-    *   اولویت با یافتن معادل‌های دقیق، رایج و طبیعی در زبان و فرهنگ فارسی است.
-    *   در صورتی که معادل مستقیمی وجود ندارد، یا استفاده از آن به اصالت اثر لطمه می‌زند، سعی کنید مفهوم را با خلاقیت و به شکلی که برای مخاطب فارسی‌زبان قابل درک باشد، منتقل کنید. (مثلاً گاهی یک توضیح کوتاه درون پرانتز در خود زیرنویس لازم است، اما این مورد را تنها در صورت ضرورت انجام دهید و اولویت با معادل‌یابی است).
-5.  دقت و صحت کامل:
-    *   ترجمه باید عاری از هرگونه اشتباه گرامری, املایی و معنایی باشد.
-    *   تمامی جزئیات موجود در زیرنویس اصلی، از جمله اعداد، اسامی خاص (شخصیت‌ها، مکان‌ها، تکنیک‌ها و...) و علائم نگارشی باید با دقت و به درستی به فارسی برگردانده شوند.
-6.  یکپارچگی و ثبات: در طول ترجمه کل فایل، برای اسامی، اصطلاحات و عبارات تکرارشونده، از معادل‌های یکسان استفاده کنید تا انسجام متن حفظ شود.
-
----
-
-محدودیت‌های زبانی:
-
-*   زبان پایه فارسی: ترجمه باید کاملاً به زبان فارسی باشد.
-*   استفاده از واژگان انگلیسی: از به‌کار بردن کلمات غیرفارسی پرهیز کنید. تنها در صورتی مجاز به استفاده از واژه انگلیسی هستید که آن واژه یک نام خاص، برند، یا اصطلاح فنی شناخته‌شده باشد که معادل فارسی رایج و جاافتاده‌ای ندارد و استفاده از اصل کلمه به درک بهتر کمک می‌کند. اولویت مطلق با واژگان فارسی است.
-*   حفظ کاراکتر : در صورت وجود کاراکتر پایپ‌لاین (\`|\`) و کاراکترهای آکولاد (\`{\`) و (\`}\`) در متن اصلی، این کاراکتر باید بدون هیچ تغییری در متن ترجمه‌شده نیز حفظ شود.
-*   نکته آکولاد: تعداد آکولاد خروجی باید برابر با ورودی باشه، و وجود آن در ترجمه نباید تاثیر منفی بگذارد و قرار دادن آن در خروجی فقط یک استایل نمایشی می‌باشد.
-*   نکته روماجی ژاپنی: خطوط روماجی ژاپنی که مربوط به آواز آغازین و پایانی انیمه را بدون ترجمه در زیرنویس قرار داده شود.
+فرایند پردازش و ترجمه (مبتنی بر خود-اصلاحی): شما باید این فرآیند را در سه گام ذهنی و متوالی اجرا کنید:\n
+گام ۱: تحلیل جامع و تولید پیش‌نویس اولیه\n
+* پیش از شروع ترجمه، کل محتوای متن را بخوانید تا ژانر، فضای داستانی، کنایه‌ها و ویژگی‌های شخصیتی کاراکترها را درک کنید.\n
+* در مرحلهٔ اندیشیدن، بر اساس این درک، یک پیش‌نویس اولیه از ترجمه را در ذهن تولید کنید.\n\n
+گام ۲: بازبینی موشکافانه و پالایش (مرحلهٔ خود-اصلاحی)\n
+* با نگاه یک ویراستار سخت‌گیر، پیش‌نویس خود را به چالش بکشید و بازبینی کنید.\n
+* از خود بپرسید: آیا این جمله روان است یا بوی ترجمه می‌دهد؟ آیا لحن شخصیت حفظ شده؟ آیا معادل بهتری برای این اصطلاح وجود دارد؟\n\n
+گام ۳: ارائه خروجی نهایی\n
+* نسخهٔ نهایی، سلیس و بی‌نقص را که حاصل گام دوم است، به‌عنوان خروجی قطعی ارائه دهید.\n\n
+---\n\n
+اصول کلیدی ترجمه (قوانین حاکم بر گام‌های بالا):\n\n
+1. روانی، سلیس بودن و زبان محاوره‌ای زنده (پرهیز از ترجمه تحت‌اللفظی):\n
+هدف اصلی، انتقال دقیق پیام و حس دیالوگ است. از ترجمهٔ کلمه‌به‌کلمه، کتابی، نوشتاری و عبارات ماشینی اکیداً پرهیز کنید؛ ترجمه باید به زبان فارسی امروزی، طبیعی، پویا و کاملاً گیرا باشد.\n\n
+2. حفظ و بازتاب دقیق لحن و سبک شخصیت‌ها (حیاتی و بدون سانسور):\n
+لحن و شیوه گفتار هر کاراکتر (رسمی، دوستانه، طنز، جدی، خشن، معصومانه و...) باید با ظرافت رعایت شود. مدل زبانی باید مانند یک بازیگر نقش‌آفرینی کند:\n
+- برای شخصیت‌های بی‌پروا، لات‌منش یا بی‌سواد: ترجمه باید کاملاً عامیانه، کوچه‌بازاری و دارای اصطلاحات خیابانی باشد. از اتوکشیده کردن، مؤدب‌سازی یا رسمی کردن دیالوگ‌های این شخصیت‌ها اکیداً خودداری کنید.\n
+- برای شخصیت‌های باوقار، مرموز یا اشرافی: لحن باید محترمانه باشد، اما همچنان طبیعی و روان بماند (از تبدیل گفت‌وگو به متن نوشتاری و کتابی خودداری کنید).\n\n
+تذکر بسیار مهم: ترجمه حرفه‌ای به معنای سانسور، تلطیف یا پاستوریزه کردن کلمات نیست؛ بلکه به معنای انتقال دقیق حس جمله است. اگر متن اصلی دارای کلمات رکیک، جنسی یا خشن است، ترجمه فارسی نیز باید با همان شدت و حدت (بدون سانسور) ارائه شود تا اصالت اثر حفظ گردد.\n\n
+3. بومی‌سازی هوشمندانه اصطلاحات و ارجاعات فرهنگی:\n
+اصطلاحات، ضرب‌المثل‌ها، شوخی‌ها و عبارات خاص فرهنگی انیمه را شناسایی کنید. اولویت با یافتن معادل‌های دقیق، رایج و طبیعی در زبان و فرهنگ فارسی است. در صورت نبود معادل مستقیم، مفهوم را با خلاقیت و به‌گونه‌ای که برای مخاطب فارسی‌زبان جذاب و ملموس باشد منتقل کنید.\n\n
+4. دقت و یکپارچگی در اسامی و جزئیات:\n
+تمامی جزئیات متن اصلی (شامل اعداد، اسامی خاص شخصیت‌ها، مکان‌ها، تکنیک‌ها و علائم نگارشی) باید با دقت کامل ترجمه شوند و در سرتاسر تمام فایل‌ها کاملاً یکسان و هماهنگ استفاده شود.\n`;
 
 
----
 
-ساختار و فرمت خروجی:
+    const CONVERSATIONAL_PROMPT = `قوانین ترجمه:\n
+1. روانی، سلیس بودن و جذابیت کلام: ترجمه باید به زبان فارسی امروزی، طبیعی و پویا باشد. متن نهایی باید به‌راحتی خوانده شود و برای مخاطب عام فارسی‌زبان کاملاً قابل فهم و گیرا باشد و از به‌کار بردن لحن کتابی، رسمی و عبارات ماشینی پرهیز کن.\n
+2. حفظ و بازتاب دقیق لحن و سبک شخصیت‌ها (حیاتی):\n
+لحن و شیوه گفتار هر کاراکتر (رسمی، دوستانه، طنز، جدی، خشن، معصومانه و...) باید با دقت در ترجمه رعایت شود؛ مثلاً:\n
+- برای شخصیت‌های بی‌پروا، لات یا کم‌سواد: ترجمه باید کاملاً عامیانه، کوچه‌بازاری و دارای اصطلاحات خیابانی باشد. از مؤدبانه کردن یا رسمی نوشتن دیالوگ‌های این کاراکترها خودداری کنید.\n
+- برای شخصیت‌های رسمی، مرموز یا اشرافی: لحن باید متین باشد.\n
+3. در ترجمه اسامی، القاب و اصطلاحات داستانی، در سرتاسر فایل یکدستی و هماهنگی کامل را رعایت کن.\n`;
 
-1.  تطابق کامل با فرمت ورودی: خروجی باید *دقیقا* با حفظ ساختار، فرمت، شماره‌گذاری خطوط و به‌ویژه زمان‌بندی فایل اصلی 'میکرو دی وی دی' ارائه شود. هر خط ترجمه شده باید متناظر با خط اصلی در فایل ورودی باشد.
-2.  محتوای خروجی: خروجی نهایی باید *صرفاً* یک بلوک کد باشد که *فقط و فقط* شامل متن ترجمه‌شده‌ی زیرنویس به فارسی است.
-3.  عدم وجود اطلاعات اضافی در بلوک کد: هیچ‌گونه توضیح، مقدمه، تفسیر، یادداشت مترجم یا هرگونه متن اضافی دیگری نباید *درون* این بلوک کد قرار گیرد.
-
-تأکید نهایی:
-شما باید تمامی این دستورالعمل‌ها را با دقت مرور کرده و اطمینان حاصل کنید که خروجی شما دقیقاً مطابق با موارد ذکر شده است. هدف، ارائه یک ترجمه حرفه‌ای و بی‌نقص است که نیازی به ویرایش مجدد نداشته باشد.`;
+    // لیست پرامپت‌های رسمی و غیرقابل حذف برنامه
+    const SYSTEM_PROMPTS = [
+        {
+            id: 'system_pro_flash',
+            name: 'پرامپت ترجمه حرفه‌ای (مدل های Flash, Pro)',
+            content: DEFAULT_PROMPT
+        },
+        {
+            id: 'system_flash_lite',
+            name: 'پرامپت ترجمه محاوره‌ای (مدل های Flash Lite)',
+            content: CONVERSATIONAL_PROMPT
+        }
+    ];
 
     let uploadedFile = null;
     let translatedMicroDVDContent = '';
     let originalMicroDVDLines = 0;
-    
-    let models = [];
+
+     const SYSTEM_MODELS = [
+        { displayName: 'Gemini 3.8 Flash', apiName: 'gemini-3.8-flash' },        
+        { displayName: 'Gemini 3.7 Flash', apiName: 'gemini-3.7-flash' },        
+        { displayName: 'Gemini 3.6 Flash', apiName: 'gemini-3.6-flash' },        
+        { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },        
+        { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
+        { displayName: 'Gemini 3.5 Flash Lite', apiName: 'gemini-3.5-flash-lite' },
+        { displayName: 'Gemini 3.1 Flash Lite', apiName: 'gemini-3.1-flash-lite' }
+    ];
     let selectedModelApiName = '';
     let prompts = [];
     let selectedPromptId = 'default';
@@ -642,127 +628,7 @@ function rebuildAssFromTranslation(originalAssContent, mapping, translationLooku
 // === END: مجموعه توابع جدید برای پردازش خروجی ASS ===
 
 
-    
-// === START: تابع نهایی "پیوند" بر اساس فرمان شما (نسخه بی‌نقص) ===
-function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
-    if (!originalMicroDVD) return { mergedText: '', untranslatedCount: 0, reconstructedCount: 0 };
-    const originalLines = originalMicroDVD.trim().split('\n');
-    if (!aiOutputMicroDVD) return { mergedText: originalMicroDVD, untranslatedCount: originalLines.length, reconstructedCount: 0 };
-
-    const aiLines = aiOutputMicroDVD.trim().split('\n');
-    const microDVDLineRegex = /^{(\d+)}{(\d+)}(.*)$/;
-
-    // ۱. تجزیه و پارس خطوط فایل اصلی
-    const parsedOrig = originalLines.map((line, index) => {
-        const match = line.match(microDVDLineRegex);
-        if (match) {
-            return {
-                index,
-                line,
-                startFrame: match[1],
-                endFrame: match[2],
-                timeKey: `{${match[1]}}{${match[2]}}`,
-                text: match[3]
-            };
-        }
-        return null;
-    });
-
-    // ۲. تجزیه و پارس خطوط دریافتی از هوش مصنوعی
-    const parsedAi = aiLines.map((line, index) => {
-        const match = line.trim().match(microDVDLineRegex);
-        if (match) {
-            return {
-                index,
-                line,
-                startFrame: match[1],
-                endFrame: match[2],
-                timeKey: `{${match[1]}}{${match[2]}}`,
-                text: match[3]
-            };
-        }
-        return null;
-    });
-
-    // نقشه‌ها برای نگهداری ایندکس خطوط جفت‌شده
-    const matchedOrigToAi = new Map(); // origIndex -> aiIndex
-    const matchedAiToOrig = new Map(); // aiIndex -> origIndex
-
-    // ۳. گام اول: تطابق ۱۰۰٪ دقیق بر اساس کلید فریم‌های اصلی
-    for (let i = 0; i < parsedOrig.length; i++) {
-        const orig = parsedOrig[i];
-        if (!orig) continue;
-
-        const aiIndex = parsedAi.findIndex((ai, j) => ai && !matchedAiToOrig.has(j) && ai.timeKey === orig.timeKey);
-        if (aiIndex !== -1) {
-            matchedOrigToAi.set(i, aiIndex);
-            matchedAiToOrig.set(aiIndex, i);
-        }
-    }
-
-    // ۴. گام دوم: الگوریتم نجات و بازسازی خطوط منفرد جا افتاده
-    let reconstructedCount = 0;
-
-    for (let i = 0; i < parsedOrig.length; i++) {
-        // فقط اگر خط فعلی فاقد ترجمه باشد
-        if (parsedOrig[i] && !matchedOrigToAi.has(i)) {
-            
-            // بررسی شرط وجود همسایه ترجمه‌شده در قبل و بعد (مرز ساندویچی)
-            const hasPrevNeighbor = i > 0 && parsedOrig[i - 1] && matchedOrigToAi.has(i - 1);
-            const hasNextNeighbor = i < parsedOrig.length - 1 && parsedOrig[i + 1] && matchedOrigToAi.has(i + 1);
-
-            if (hasPrevNeighbor && hasNextNeighbor) {
-                const prevAiIndex = matchedOrigToAi.get(i - 1);
-                const nextAiIndex = matchedOrigToAi.get(i + 1);
-
-                // پیدا کردن خطوط آزاد (ترجمه‌شده ولی جفت‌نشده) بین این دو مرز در خروجی هوش مصنوعی
-                const candidateAiIndices = [];
-                for (let j = prevAiIndex + 1; j < nextAiIndex; j++) {
-                    if (parsedAi[j] && !matchedAiToOrig.has(j)) {
-                        candidateAiIndices.push(j);
-                    }
-                }
-
-                // اگر دقیقاً یک خط یتیم پیدا شد، آن را به خط اصلی متناظر پیوند می‌دهیم
-                if (candidateAiIndices.length === 1) {
-                    const matchedAiIndex = candidateAiIndices[0];
-                    matchedOrigToAi.set(i, matchedAiIndex);
-                    matchedAiToOrig.set(matchedAiIndex, i);
-                    reconstructedCount++;
-                }
-            }
-        }
-    }
-
-    // ۵. بازسازی خروجی نهایی
-    const mergedLines = [];
-    let untranslatedCount = 0;
-
-    for (let i = 0; i < parsedOrig.length; i++) {
-        const orig = parsedOrig[i];
-        if (orig) {
-            if (matchedOrigToAi.has(i)) {
-                const aiIndex = matchedOrigToAi.get(i);
-                const translatedText = parsedAi[aiIndex].text;
-                mergedLines.push(`${orig.timeKey}${translatedText}`);
-            } else {
-                mergedLines.push(orig.line);
-                untranslatedCount++;
-            }
-        } else {
-            mergedLines.push(originalLines[i]);
-        }
-    }
-
-    return {
-        mergedText: mergedLines.join('\n'),
-        untranslatedCount: untranslatedCount,
-        reconstructedCount: reconstructedCount
-    };
-}
-// === END: تابع نهایی "پیوند" ===
-
-    
+        
 
     
     // --- 4. توابع مدیریت برنامه ---
@@ -881,68 +747,112 @@ async function finalizeAssFile(assContent) {
         progressText.textContent = `${Math.round(p)}٪`;
     }
 
-    function renderModels() {
+      function renderModels() {
         modelListDiv.innerHTML = '';
         models.forEach((model, index) => {
+            const isCustom = !SYSTEM_MODELS.some(sm => sm.apiName === model.apiName);
             const modelDiv = document.createElement('div');
             modelDiv.className = 'model-item';
             if (model.apiName === selectedModelApiName) modelDiv.classList.add('selected');
-            modelDiv.innerHTML = `<div class="model-info"><span class="model-display-name">${model.displayName}</span><span class="model-api-name">${model.apiName}</span></div>${models.length > 1 ? `<button class="delete-model-btn" title="حذف مدل" data-index="${index}"><svg class="trash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11V17H11V11H9ZM13 11V17H15V11H13ZM9 4V6H15V4H9Z"></path></svg></button>` : ''}`;
-            modelDiv.addEventListener('click', (e) => { if (!e.target.closest('.delete-model-btn')) selectModel(model.apiName); });
-            if (models.length > 1) {
-                modelDiv.querySelector('.delete-model-btn').addEventListener('click', (e) => { e.stopPropagation(); deleteModel(index); });
+
+            // دکمه سطل آشغال فقط برای مدل‌های دست‌ساز کاربر ظاهر می‌شود
+            const deleteBtnHtml = isCustom 
+                ? `<button class="delete-model-btn" title="حذف مدل سفارشی" data-index="${index}"><svg class="trash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11V17H11V11H9ZM13 11V17H15V11H13ZM9 4V6H15V4H9Z"></path></svg></button>` 
+                : '';
+
+            modelDiv.innerHTML = `<div class="model-info"><span class="model-display-name">${model.displayName}</span><span class="model-api-name">${model.apiName}</span></div>${deleteBtnHtml}`;
+            
+            modelDiv.addEventListener('click', (e) => { 
+                if (!e.target.closest('.delete-model-btn')) selectModel(model.apiName); 
+            });
+
+            if (isCustom) {
+                modelDiv.querySelector('.delete-model-btn').addEventListener('click', (e) => { 
+                    e.stopPropagation(); 
+                    deleteModel(index); 
+                });
             }
             modelListDiv.appendChild(modelDiv);
         });
     }
-    function saveModels() { localStorage.setItem('userModels', JSON.stringify(models)); localStorage.setItem('selectedModel', selectedModelApiName); }
-    function selectModel(apiName) { 
-    selectedModelApiName = apiName; 
 
-    // تنظیم خودکار دما (Temperature) و TopP بر اساس مدل انتخاب شده
-    if (apiName && apiName.toLowerCase().includes('gemini-3.6-flash')) {
-        tempSlider.value = 0.4;
-        tempValue.textContent = '0.4';
-        topPSlider.value = 0.7;
-        topPValue.textContent = '0.7';
-    } else {
-        tempSlider.value = 0.7;
-        tempValue.textContent = '0.7';
-        topPSlider.value = 0.9;
-        topPValue.textContent = '0.9';
+     function saveModels() { 
+      
+        const customModels = models.filter(m => !SYSTEM_MODELS.some(sm => sm.apiName === m.apiName));
+        localStorage.setItem('customModels', JSON.stringify(customModels)); 
+        localStorage.setItem('selectedModel', selectedModelApiName); 
     }
 
-    saveModels(); 
-    renderModels(); 
-}
+    function selectModel(apiName) { 
+        selectedModelApiName = apiName; 
 
-function loadModels() { 
-    const savedModels = localStorage.getItem('userModels'); 
-    const savedSelected = localStorage.getItem('selectedModel'); 
-    models = savedModels && JSON.parse(savedModels).length > 0 ? JSON.parse(savedModels) : [
-        { displayName: 'Gemini 3.7 Flash', apiName: 'gemini-3.7-flash' },        
-        { displayName: 'Gemini 3.6 Flash', apiName: 'gemini-3.6-flash' },        
-        { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },        
-        { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
-        { displayName: 'Gemini 2.5 Flash', apiName: 'gemini-2.5-flash' }
-    ];  
-    
-    const initialSelected = savedSelected && models.some(m => m.apiName === savedSelected) ? savedSelected : models[0]?.apiName || ''; 
-    
-    // فراخوانی selectModel هنگام لود شدن صفحه تا اسلایدرها هم ست شوند
-    selectModel(initialSelected); 
-}
+     
+        if (apiName && apiName.toLowerCase().includes('gemini-3.6-flash')) {
+            tempSlider.value = 0.4;
+            tempValue.textContent = '0.4';
+            topPSlider.value = 0.7;
+            topPValue.textContent = '0.7';
+        } else {
+            tempSlider.value = 0.7;
+            tempValue.textContent = '0.7';
+            topPSlider.value = 0.9;
+            topPValue.textContent = '0.9';
+        }
+
+        saveModels(); 
+        renderModels(); 
+    }
+
+    function loadModels() { 
+        let customModels = [];
+
+       
+        const savedCustom = localStorage.getItem('customModels');
+        if (savedCustom) {
+            try { customModels = JSON.parse(savedCustom) || []; } catch (e) { customModels = []; }
+        } else {
+           
+            const legacyModels = localStorage.getItem('userModels');
+            if (legacyModels) {
+                try {
+                    const parsedLegacy = JSON.parse(legacyModels) || [];
+                  
+                    customModels = parsedLegacy.filter(lm => !SYSTEM_MODELS.some(sm => sm.apiName === lm.apiName));
+                    localStorage.setItem('customModels', JSON.stringify(customModels));
+                } catch (e) { }
+                localStorage.removeItem('userModels'); // پاک‌سازی کلید قدیمی برای همیشه
+            }
+        }
+
+       
+        const uniqueCustomModels = customModels.filter(cm => !SYSTEM_MODELS.some(sm => sm.apiName === cm.apiName));
+        models = [...SYSTEM_MODELS, ...uniqueCustomModels];
+
+      
+        const savedSelected = localStorage.getItem('selectedModel');
+        const initialSelected = savedSelected && models.some(m => m.apiName === savedSelected) 
+            ? savedSelected 
+            : models[0]?.apiName || ''; 
+
+        selectModel(initialSelected); 
+    }
     function addModel() { const displayName = prompt("یک نام نمایشی برای مدل وارد کنید (مثلا: Gemini Flash):"); if (!displayName) return; const apiName = prompt("نام دقیق API مدل را وارد کنید (مثلا: gemini-1.5-flash-latest):"); if (!apiName) return; if (models.some(m => m.apiName === apiName)) return alert("این مدل از قبل وجود دارد."); models.push({ displayName, apiName }); selectModel(apiName); }
     function deleteModel(index) { if (!confirm(`آیا از حذف مدل "${models[index].displayName}" مطمئن هستید؟`)) return; const deletedModelWasSelected = models[index].apiName === selectedModelApiName; models.splice(index, 1); if (deletedModelWasSelected && models.length > 0) { selectModel(models[0].apiName); } else { saveModels(); renderModels(); } }
 
     function renderPrompts() {
         promptListDiv.innerHTML = '';
-        const defaultPromptDiv = document.createElement('div');
-        defaultPromptDiv.className = 'prompt-item';
-        if ('default' === selectedPromptId) defaultPromptDiv.classList.add('selected');
-        defaultPromptDiv.innerHTML = `<div class="prompt-info"><span class="prompt-display-name">پرامپت پیش‌فرض زیرنویس انگلیسی</span><span class="prompt-type-name">(توصیه شده - غیرقابل ویرایش)</span></div>`;
-        defaultPromptDiv.addEventListener('click', () => selectPrompt('default'));
-        promptListDiv.appendChild(defaultPromptDiv);
+        
+        // ۱. رندر پرامپت‌های رسمی و سیستمی برنامه
+        SYSTEM_PROMPTS.forEach(sp => {
+            const systemPromptDiv = document.createElement('div');
+            systemPromptDiv.className = 'prompt-item';
+            if (sp.id === selectedPromptId) systemPromptDiv.classList.add('selected');
+            systemPromptDiv.innerHTML = `<div class="prompt-info"><span class="prompt-display-name">${sp.name}</span><span class="prompt-type-name">(رسمی - غیرقابل ویرایش)</span></div>`;
+            systemPromptDiv.addEventListener('click', () => selectPrompt(sp.id));
+            promptListDiv.appendChild(systemPromptDiv);
+        });
+
+        // ۲. رندر پرامپت‌های سفارشی کاربر
         prompts.forEach((prompt) => {
             const promptDiv = document.createElement('div');
             promptDiv.className = 'prompt-item';
@@ -954,19 +864,100 @@ function loadModels() {
         });
         updatePromptDisplay();
     }
-    function updatePromptDisplay() { const isDefault = selectedPromptId === 'default'; promptDisplayArea.value = getActivePromptContent(); promptDisplayArea.readOnly = isDefault; }
-    function getActivePromptContent() { if (selectedPromptId === 'default') { return DEFAULT_PROMPT; } const selected = prompts.find(p => p.id === selectedPromptId); return selected ? selected.content : DEFAULT_PROMPT; }
-    function savePrompts() { localStorage.setItem('userPrompts', JSON.stringify(prompts)); localStorage.setItem('selectedPrompt', selectedPromptId); }
-    function loadPrompts() { const savedPrompts = localStorage.getItem('userPrompts'); const savedSelected = localStorage.getItem('selectedPrompt'); prompts = savedPrompts ? JSON.parse(savedPrompts) : []; selectedPromptId = savedSelected || 'default'; renderPrompts(); }
-    function selectPrompt(id) { selectedPromptId = id; savePrompts(); renderPrompts(); }
-    function addPrompt() { const name = prompt("یک نام برای پرامپت سفارشی خود وارد کنید:"); if (!name || name.trim() === '') return; const newPrompt = { id: Date.now().toString(), name: name.trim(), content: `// پرامپت جدید برای "${name.trim()}"\n// محتوای خود را اینجا وارد کنید.` }; prompts.push(newPrompt); selectPrompt(newPrompt.id); }
-    function deletePrompt(id) { const promptToDelete = prompts.find(p => p.id === id); if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; prompts = prompts.filter(p => p.id !== id); if (selectedPromptId === id) { selectPrompt('default'); } else { savePrompts(); renderPrompts(); } }
-    function handlePromptEditing() { if (selectedPromptId === 'default') return; const currentPrompt = prompts.find(p => p.id === selectedPromptId); if (currentPrompt) { currentPrompt.content = promptDisplayArea.value; savePrompts(); } }
-    function resetAllSettings() { if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگ '.")) { localStorage.removeItem('geminiApiKey'); localStorage.removeItem('userModels'); localStorage.removeItem('selectedModel'); localStorage.removeItem('userPrompts'); localStorage.removeItem('selectedPrompt'); 
-    localStorage.removeItem('thinkingModeEnabled_v2');
-    apiKeyInput.value = ''; loadModels(); loadPrompts(); 
-    loadThinkingModeSetting();
-    checkFormValidity(); alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.');  location.reload();  } }
+
+    function isSystemPrompt(id) {
+        return SYSTEM_PROMPTS.some(sp => sp.id === id);
+    }
+
+    function updatePromptDisplay() { 
+        const isSystem = isSystemPrompt(selectedPromptId); 
+        promptDisplayArea.value = getActivePromptContent(); 
+        promptDisplayArea.readOnly = isSystem; 
+    }
+
+    function getActivePromptContent() { 
+        const systemMatch = SYSTEM_PROMPTS.find(sp => sp.id === selectedPromptId);
+        if (systemMatch) return systemMatch.content;
+
+        const customMatch = prompts.find(p => p.id === selectedPromptId); 
+        return customMatch ? customMatch.content : SYSTEM_PROMPTS[0].content; 
+    }
+
+    function savePrompts() { 
+        localStorage.setItem('userPrompts', JSON.stringify(prompts)); 
+        localStorage.setItem('selectedPrompt', selectedPromptId); 
+    }
+
+    function loadPrompts() { 
+        const savedPrompts = localStorage.getItem('userPrompts'); 
+        const savedSelected = localStorage.getItem('selectedPrompt'); 
+        prompts = savedPrompts ? JSON.parse(savedPrompts) : []; 
+
+        // مهاجرت کلید 'default' قدیمی به شناسه رسمی جدید
+        if (!savedSelected || savedSelected === 'default') {
+            selectedPromptId = 'system_pro_flash';
+        } else {
+            selectedPromptId = savedSelected;
+        }
+        renderPrompts(); 
+    }
+
+    function selectPrompt(id) { 
+        selectedPromptId = id; 
+        savePrompts(); 
+        renderPrompts(); 
+    }
+
+    function addPrompt() { 
+        const name = prompt("یک نام برای پرامپت سفارشی خود وارد کنید:"); 
+        if (!name || name.trim() === '') return; 
+        const newPrompt = { 
+            id: Date.now().toString(), 
+            name: name.trim(), 
+            content: `// پرامپت جدید برای "${name.trim()}"\n// محتوای خود را اینجا وارد کنید.` 
+        }; 
+        prompts.push(newPrompt); 
+        selectPrompt(newPrompt.id); 
+    }
+
+    function deletePrompt(id) { 
+        const promptToDelete = prompts.find(p => p.id === id); 
+        if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; 
+        prompts = prompts.filter(p => p.id !== id); 
+        if (selectedPromptId === id) { 
+            selectPrompt('system_pro_flash'); 
+        } else { 
+            savePrompts(); 
+            renderPrompts(); 
+        } 
+    }
+
+    function handlePromptEditing() { 
+        if (isSystemPrompt(selectedPromptId)) return; 
+        const currentPrompt = prompts.find(p => p.id === selectedPromptId); 
+        if (currentPrompt) { 
+            currentPrompt.content = promptDisplayArea.value; 
+            savePrompts(); 
+        } 
+    }
+    function resetAllSettings() { 
+        if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { 
+            localStorage.removeItem('geminiApiKey'); 
+            localStorage.removeItem('customModels'); 
+            localStorage.removeItem('userModels'); 
+            localStorage.removeItem('selectedModel'); 
+            localStorage.removeItem('userPrompts'); 
+            localStorage.removeItem('selectedPrompt'); 
+            localStorage.removeItem('thinkingModeEnabled_v2');
+            apiKeyInput.value = ''; 
+            loadModels(); 
+            loadPrompts(); 
+            loadThinkingModeSetting();
+            checkFormValidity(); 
+            alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.');  
+            location.reload();  
+        } 
+    }
     
 
     //  توابع  برای مدیریت تنظیمات ایمنی
@@ -1196,56 +1187,18 @@ function loadModels() {
         });
     }
 
-    function uploadFileToGemini(processedText, originalFilename, apiKey, onProgress) {
-        return new Promise((resolve, reject) => {
-            progressTitle.textContent = "مرحله ۲ از ۴: آپلود فایل به سرور گوگل...";
-            const formData = new FormData();
-            const fileToUpload = new File([processedText], originalFilename, { type: 'text/plain' });
-            formData.append('file', fileToUpload);
-            // const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
-              const proxyEnabled = document.getElementById('proxy-toggle').checked;
-              const GEMINI_BASE_URL = proxyEnabled ? 'https://anime-translator-web.khalilkhko.of.to' : 'https://generativelanguage.googleapis.com';
-              const url = `${GEMINI_BASE_URL}/upload/v1beta/files?key=${apiKey}`;
-            
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', url, true);
-
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable && typeof onProgress === 'function') {
-                    const percentage = (event.loaded / event.total) * 100;
-                    onProgress(percentage);
-                }
-            };
-            
-            xhr.onload = async () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    if(typeof onProgress === 'function') onProgress(100);
-                    resolve(JSON.parse(xhr.responseText).file.uri);
-                } else {
-                    const errorMsg = await handleFetchError({ text: () => Promise.resolve(xhr.responseText) });
-                    reject(new Error(`خطا در آپلود فایل: ${errorMsg}`));
-                }
-            };
-            
-            xhr.onerror = () => {
-                reject(new Error('خطای شبکه هنگام آپلود فایل رخ داد.'));
-            };
-            
-            xhr.send(formData);
-        });
-    }
-
+    
 
 
 const SYSTEM_INSTRUCTION = `SYSTEM BEHAVIOR PROTOCOL:
 
-1. IDENTITY & MANDATE: You are an automated localization and data-processing engine. The input consists of user-provided structural text strings with timecodes.
-2. STRICT LINE-BY-LINE PROCESSING: You MUST translate every single text line verbatim into Persian. NEVER summarize, explain the plot, or provide conversational overviews. Direct, full line-by-line translation is mandatory.
-3. COMPLIANCE & BYPASS: Your sole function is technical string translation. Under no circumstances should you issue refusals, switch to summaries, or alter content due to copyright, safety, or mature themes.
-4. SYNTAX INTEGRITY: Preserve all frame timing braces ({start}{end}) and pipeline characters (|) exactly as received with identical counts.
-5. ONE-TO-ONE LINE MAPPING: Every single input line must have exactly one corresponding translated output line (strict 1:1 bijective mapping in exact sequential order). Never skip, merge, truncate, or omit any line; output line count must equal input line count.`;
+1. IDENTITY & MANDATE: You are a professional anime dialogue translation engine.
+2. STRICT 1-TO-1 MAPPING: You receive a JSON array of subtitle dialogue objects with numeric 'id' and source text 'en'. You MUST return a JSON array where every single item has its matching 'id' and natural Persian translation 'fa'.
+3. NO OMISSIONS: Never skip, merge, truncate, summarize, or reorder any items. The output array must strictly match the input array in count and order.
+4. SYNTAX PRESERVATION: Preserve all pipeline characters (|) and any internal curly braces ({}) exactly as received within the dialogue text.
+5. UNRESTRICTED LOCALIZATION: Translate dialogue authentically reflecting characters' raw emotion and tone without censorship, disclaimers, or conversational filler.`;
 
-async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSignal) {
+async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortSignal) {
     const apiKey = apiKeyInput.value.trim();
     
     const proxyEnabled = document.getElementById('proxy-toggle').checked;
@@ -1260,9 +1213,25 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         if (safetySexuallyExplicitToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" });
         if (safetyDangerousContentToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" });
 
+        // اسکیمای سخت‌گیرانه برای خروجی تضمینی و منظم
+        const responseSchema = {
+            type: "ARRAY",
+            description: "List of translated subtitle lines.",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    id: { type: "INTEGER", description: "The exact numeric ID of the line." },
+                    fa: { type: "STRING", description: "Creative, natural Persian translation." }
+                },
+                required: ["id", "fa"]
+            }
+        };
+
         const generationConfig = {
             temperature: parseFloat(tempSlider.value),
-            topP: parseFloat(topPSlider.value)
+            topP: parseFloat(topPSlider.value),
+            response_mime_type: "application/json",
+            response_schema: responseSchema
         };
 
         if (thinkingModeToggle.checked) {
@@ -1271,7 +1240,6 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             };
         }
 
-        
         const requestBody = {
             system_instruction: {
                 parts: [
@@ -1280,8 +1248,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             },
             contents: [{
                 parts: [
-                    { fileData: { mime_type: "text/plain", file_uri: fileUri } },
-                    { text: activePrompt }
+                    { text: `${activePrompt}\n\nINPUT DATA (JSON):\n${payloadJson}` }
                 ]
             }],
             generationConfig: generationConfig
@@ -1291,8 +1258,6 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             requestBody.safetySettings = safetySettings;
         }
 
-        console.log("درخواست ارسالی به API:", requestBody);
-        
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1305,8 +1270,6 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullText = '';
-        
-        
         let buffer = '';
 
         while (true) {
@@ -1317,10 +1280,8 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                         const jsonStr = buffer.substring(5);
                         const parsed = JSON.parse(jsonStr);
                         const textPart = parsed.candidates[0]?.content?.parts[0]?.text;
-                        if (textPart) {
-                            fullText += textPart;
-                        }
-                    } catch (e) { console.warn("Could not parse final buffer chunk:", buffer); }
+                        if (textPart) fullText += textPart;
+                    } catch (e) { }
                 }
                 break;
             }
@@ -1339,17 +1300,15 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                             fullText += textPart;
                             onChunk(fullText);
                         }
-                    } catch (e) { console.warn("Could not parse a JSON chunk:", jsonStr); }
+                    } catch (e) { }
                 }
             }
         }
-        
 
         onEnd(fullText);
 
     } catch(error) { 
         if (error.name === 'AbortError') {
-            console.log('Fetch aborted by user.');
             throw error;
         }
         onError(error); 
@@ -1417,7 +1376,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
 
 
 
-       translateBtn.addEventListener('click', async () => {
+        translateBtn.addEventListener('click', async () => {
     if (!uploadedFile || !apiKeyInput.value.trim()) return;
 
     progressSection.classList.remove('hidden');
@@ -1427,7 +1386,7 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
     stopTranslationBtn.classList.remove('hidden');
     stopTranslationBtn.disabled = false;
     translateBtn.disabled = true;
-    liveOutput.textContent = 'در حال آماده سازی...';
+    liveOutput.textContent = 'در حال آماده‌سازی...';
     translationStatusMessage.classList.remove('status-complete', 'status-incomplete', 'status-aborted');
     abortController = new AbortController();
     const signal = abortController.signal;
@@ -1440,14 +1399,12 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         let outputFileNameBase = '';
 
         // --- فاز ۱: استخراج محتوا ---
-        // اگر فایل از ویدیو آمده باشد، الان زمان استخراج است
         if (uploadedFile.streamIndex !== undefined) {
             const videoFile = uploadedFile.file;
             outputFileNameBase = videoFile.name.substring(0, videoFile.name.lastIndexOf('.'));
             
-            // نمایش نوار پیشرفت "فاز استخراج"
             const onFfmpegProgress = (p) => {
-                updateProgress(p, 'مرحله ۱ از ۴: استخراج زیرنویس از فایل ویدیویی...');
+                updateProgress(p, 'مرحله ۱ از ۳: استخراج زیرنویس از فایل ویدیویی...');
             };
 
             const outputFormat = uploadedFile.type === 'subrip' ? 'srt' : 'ass';
@@ -1460,12 +1417,10 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             
             rawSubtitleContent = await new Response(ffmpegResult.files[0].data).text();
 
-            // اگر ترک استخراجی ASS بود، محتوای آن را برای مسیر ASS آماده می‌کنیم
             if (uploadedFile.type === 'ass') {
                 originalAssContent = rawSubtitleContent;
             }
         } else {
-            // اگر فایل مستقیم آپلود شده بود، محتوای آن را بخوان
             rawSubtitleContent = await uploadedFile.text();
             outputFileNameBase = uploadedFile.name.substring(0, uploadedFile.name.lastIndexOf('.'));
         }
@@ -1477,26 +1432,24 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         let microDVDContent = '';
         let assMapping = [];
         
-        updateProgress(0, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
+        updateProgress(0, 'مرحله ۱ از ۳: پردازش فایل ورودی...');
 
         if (useAssPath) {
-            // `originalAssContent` در هر دو حالت (مستقیم یا ویدیو) آماده است
             const processResult = processAssForTranslationAndMapping(originalAssContent);
             microDVDContent = processResult.microdvdForAI;
             assMapping = processResult.map;
-            updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
+            updateProgress(100, 'مرحله ۱ از ۳: پردازش فایل ورودی...');
         } else {
-            // مسیر SRT (یا ASS به SRT)
             let cleanSrtContent = '';
             const sourceIsAss = isAssInput || (uploadedFile.type === 'ass');
             
             if (sourceIsAss) {
-                updateProgress(50, 'مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...');
+                updateProgress(50, 'مرحله ۱ از ۳: تبدیل ASS به SRT و حذف استایل‌ها...');
                 cleanSrtContent = cleanAssToSrt(rawSubtitleContent);
             } else { 
                  cleanSrtContent = sortSrtContent(rawSubtitleContent);
             }
-            updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
+            updateProgress(100, 'مرحله ۱ از ۳: پردازش فایل ورودی...');
 
             if (!cleanSrtContent || cleanSrtContent.trim() === '') {
                  throw new Error("فایل زیرنویس پس از پردازش خالی است. ممکن است فرمت داخلی آن پشتیبانی نشود.");
@@ -1506,23 +1459,35 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
         
         if (!microDVDContent) throw new Error("فایل زیرنویس ورودی خالی است یا فرمت آن صحیح نیست.");
         
-        originalMicroDVDLines = microDVDContent.split('\n').length;
+        // تفکیک تایم‌کدها در حافظه موقت و آماده‌سازی دیتای سبک ID محور
         const microDVDLines = microDVDContent.split('\n');
+        originalMicroDVDLines = microDVDLines.length;
         const lastOriginalLine = microDVDLines[microDVDLines.length - 1] || '';
         const originalLineMatch = lastOriginalLine.match(/\{(\d+)\}\{(\d+)\}(.*)/);
         originalLastEndFrame = originalLineMatch ? parseInt(originalLineMatch[2], 10) : 0;
-        
-        liveOutput.textContent = 'فایل پردازش شد. در حال آماده‌سازی برای آپلود...';
 
-        const onUploadProgress = (p) => {
-             updateProgress(p, 'مرحله ۲ از ۴: آپلود فایل زیرنویس به سرور گوگل...');
-        };
-        const fileUri = await uploadFileToGemini(microDVDContent, 'data_payload.txt', apiKeyInput.value.trim(), onUploadProgress);
+        const timecodeMap = new Map();
+        const payloadData = [];
+        const lineRegex = /^\{(\d+)\}\{(\d+)\}(.*)$/;
+
+        microDVDLines.forEach((line, index) => {
+            const match = line.trim().match(lineRegex);
+            const lineId = index + 1;
+            if (match) {
+                timecodeMap.set(lineId, `{${match[1]}}{${match[2]}}`);
+                payloadData.push({ id: lineId, en: match[3] });
+            } else {
+                timecodeMap.set(lineId, "");
+                payloadData.push({ id: lineId, en: line });
+            }
+        });
+
+        const payloadJsonString = JSON.stringify(payloadData);
         
         const thinkingStartTime = Date.now();
         const baseThinkingText = 'مرحلهٔ تفکر هوش‌مصنوعی، اتمام فرایند ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید: ';
         liveOutput.textContent = baseThinkingText + '0.0 s';
-        updateProgress(0, 'مرحله ۳ از ۴: هوش مصنوعی در حال تفکر است...');
+        updateProgress(0, 'مرحله ۲ از ۳: هوش مصنوعی در حال تفکر است...');
 
         thinkingPhaseTimer = setInterval(() => {
             const elapsedTime = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
@@ -1535,26 +1500,67 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                 clearInterval(thinkingPhaseTimer);
                 thinkingPhaseTimer = null;
                 isFirstChunk = false;
-                updateProgress(0, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
+                updateProgress(0, "مرحله ۳ از ۳: در حال دریافت ترجمه...");
             }
-            const translatedLines = currentFullText.split('\n');
-            liveOutput.textContent = translatedLines.map(line => (line.match(/\{(\d+)\}\{(\d+)\}(.*)/) || [])[3] || '').join('\n').replace(/\|/g, ' ');
-            liveOutput.scrollTop = liveOutput.scrollHeight;
-            const percentage = Math.min(99, Math.round((translatedLines.length / originalMicroDVDLines) * 100));
-            updateProgress(percentage, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
+            
+            // نمایش زنده ترجمه‌ها در صفحه
+            const matches = currentFullText.match(/"fa"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g);
+            if (matches) {
+                const liveLines = matches.map(m => {
+                    const text = m.replace(/^"fa"\s*:\s*"/, '').replace(/"$/, '');
+                    return text.replace(/\\"/g, '"').replace(/\|/g, ' ');
+                });
+                liveOutput.textContent = liveLines.join('\n');
+                liveOutput.scrollTop = liveOutput.scrollHeight;
+                const percentage = Math.min(99, Math.round((liveLines.length / originalMicroDVDLines) * 100));
+                updateProgress(percentage, "مرحله ۳ از ۳: در حال دریافت ترجمه...");
+            }
         };
+
         const onStreamEnd = (finalText) => {
             clearInterval(thinkingPhaseTimer);
             updateProgress(100, "ترجمه با موفقیت انجام شد!");
-            
+
+            // ۱. تبدیل خروجی JSON هوش مصنوعی به فرمت MicroDVD
+            let translatedArray = [];
+            try {
+                let cleaned = finalText.trim();
+                const firstBracket = cleaned.indexOf('[');
+                const lastBracket = cleaned.lastIndexOf(']');
+                if (firstBracket >= 0 && lastBracket > firstBracket) {
+                    cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+                }
+                translatedArray = JSON.parse(cleaned);
+            } catch (err) {
+                console.error("خطا در پارس JSON خروجی:", err);
+                throw new Error("پاسخ دریافتی از هوش مصنوعی ساختار معتبری نداشت.");
+            }
+
+            const reconstructedLines = [];
+            let translatedMap = new Map();
+            translatedArray.forEach(item => {
+                if (item && item.id !== undefined) {
+                    translatedMap.set(item.id, item.fa || '');
+                }
+            });
+
+            for (let i = 1; i <= originalMicroDVDLines; i++) {
+                const timePrefix = timecodeMap.get(i) || '';
+                const faText = translatedMap.has(i) ? translatedMap.get(i) : (payloadData[i - 1]?.en || '');
+                reconstructedLines.push(`${timePrefix}${faText}`);
+            }
+
+            const finalReconstructedMicroDVD = reconstructedLines.join('\n');
+
+            // ۲. اجرای پردازش نهایی، اعتبارسنجی و پیام‌ها دقیقاً و مو به مو مطابق فایل اصلی شما
             if (useAssPath) {
-                const translationLookup = createTranslationLookupMap(finalText);
+                const translationLookup = createTranslationLookupMap(finalReconstructedMicroDVD);
                 const rebuildResult = rebuildAssFromTranslation(originalAssContent, assMapping, translationLookup);
                 translatedAssContent = rebuildResult.rebuiltAss;
                 const untranslatedCount = rebuildResult.untranslatedCount;
                 const styleFailures = rebuildResult.styleReplacementFailureCount; 
                 
-                const isComplete = checkTranslationCompleteness(finalText, originalLastEndFrame);
+                const isComplete = checkTranslationCompleteness(finalReconstructedMicroDVD, originalLastEndFrame);
 
                 let statusText = isComplete ? '✔️ ترجمه کامل است و استایل‌ها حفظ شده‌اند.' : '⚠️ ترجمه ممکن است ناقص باشد.';
                 if (untranslatedCount > 0) {
@@ -1568,16 +1574,20 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
                 translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
 
             } else {
-                const mergeResult = mergeTrustedFramesWithAiText(microDVDContent, finalText);
-                translatedMicroDVDContent = mergeResult.mergedText;
+                translatedMicroDVDContent = finalReconstructedMicroDVD;
                 const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
+
+               
+                let untranslatedCount = 0;
+                for (let i = 1; i <= originalMicroDVDLines; i++) {
+                    if (!translatedMap.has(i)) untranslatedCount++;
+                }
+
                 let statusText = isComplete ? '✔️ ترجمه کامل است.' : '⚠️ ترجمه ممکن است ناقص باشد.';
-                if (mergeResult.untranslatedCount > 0) {
-                   statusText += ` (توجه: ترجمه ${mergeResult.untranslatedCount} خط یافت نشد.)`;
+                if (untranslatedCount > 0) {
+                   statusText += ` (توجه: ترجمه ${untranslatedCount} خط یافت نشد.)`;
                 }
-                if (mergeResult.reconstructedCount > 0) {
-                     statusText += ` (تعداد ${mergeResult.reconstructedCount} خط با تایم‌کد مخدوش بازسازی شد.)`;
-                }
+                
                 translationStatusMessage.innerHTML = statusText;
                 translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
             }
@@ -1587,9 +1597,11 @@ async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSigna
             translateBtn.disabled = false;
             stopTranslationBtn.classList.add('hidden');
         };
+
         const onStreamError = (error) => { throw error; };
 
-        await getTranslationStream(fileUri, onChunkReceived, onStreamEnd, onStreamError, signal);
+        // ارسال درخواست مستقیم با دیتای JSON بدون نیاز به آپلود فایل
+        await getTranslationStream(payloadJsonString, onChunkReceived, onStreamEnd, onStreamError, signal);
 
     } catch (error) {
         clearInterval(thinkingPhaseTimer); 
@@ -1733,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('startup-modal2');
     const closeBtn = document.getElementById('modal-close-btn2');
     const checkbox = document.getElementById('modal-ack-checkbox2'); 
-    const STORAGE_KEY = 'google_limit_warning_v4.0';
+    const STORAGE_KEY = 'google_limit_warning_v5.0';
     
     // فقط نمایش بده اگر کاربر کلید API داره و هنوز هشدار رو ندیده
     const hasApiKey = localStorage.getItem('geminiApiKey');
