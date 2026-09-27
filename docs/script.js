@@ -114,36 +114,36 @@ const COUNTER_API_PROXY_URL = 'https://anime-counter.khalilkhko.of.to';
 - برای شخصیت‌های رسمی، مرموز یا اشرافی: لحن باید متین باشد.\n
 3. در ترجمه اسامی، القاب و اصطلاحات داستانی، در سرتاسر فایل یکدستی و هماهنگی کامل را رعایت کن.\n`;
 
-    // لیست پرامپت‌های رسمی و غیرقابل حذف برنامه
+
     const SYSTEM_PROMPTS = [
-        {
-            id: 'system_pro_flash',
-            name: 'پرامپت ترجمه حرفه‌ای (مدل های Flash, Pro)',
-            content: DEFAULT_PROMPT
-        },
-        {
-            id: 'system_flash_lite',
-            name: 'پرامپت ترجمه محاوره‌ای (مدل های Flash Lite)',
-            content: CONVERSATIONAL_PROMPT
-        }
-    ];
+    {
+        id: 'system_pro_flash',
+        name: 'پرامپت ترجمه حرفه‌ای (مدل های Flash, Pro)',
+        content: DEFAULT_PROMPT
+    },
+    {
+        id: 'system_flash_lite',
+        name: 'پرامپت ترجمه محاوره‌ای (مدل های Flash Lite)',
+        content: CONVERSATIONAL_PROMPT
+    }
+];
 
-    let uploadedFile = null;
-    let translatedMicroDVDContent = '';
-    let originalMicroDVDLines = 0;
+let uploadedFile = null;
+let translatedMicroDVDContent = '';
+let originalMicroDVDLines = 0;
 
-     const SYSTEM_MODELS = [
-        { displayName: 'Gemini 3.8 Flash', apiName: 'gemini-3.8-flash' },        
-        { displayName: 'Gemini 3.7 Flash', apiName: 'gemini-3.7-flash' },        
-        { displayName: 'Gemini 3.6 Flash', apiName: 'gemini-3.6-flash' },        
-        { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },        
-        { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
-        { displayName: 'Gemini 3.5 Flash Lite', apiName: 'gemini-3.5-flash-lite' },
-        { displayName: 'Gemini 3.1 Flash Lite', apiName: 'gemini-3.1-flash-lite' }
-    ];
-    let selectedModelApiName = '';
-    let prompts = [];
-    let selectedPromptId = 'default';
+const SYSTEM_MODELS = [
+    { displayName: 'Gemini 3.8 Flash', apiName: 'gemini-3.8-flash' },        
+    { displayName: 'Gemini 3.7 Flash', apiName: 'gemini-3.7-flash' },        
+    { displayName: 'Gemini 3.6 Flash', apiName: 'gemini-3.6-flash' },        
+    { displayName: 'Gemini 3.5 Flash', apiName: 'gemini-3.5-flash' },        
+    { displayName: 'Gemini 3 Flash Preview', apiName: 'gemini-3-flash-preview' },
+    { displayName: 'Gemini 3.5 Flash Lite', apiName: 'gemini-3.5-flash-lite' },
+    { displayName: 'Gemini 3.1 Flash Lite', apiName: 'gemini-3.1-flash-lite' }
+];
+let selectedModelApiName = '';
+let prompts = [];
+let selectedPromptId = 'default';
 
     let abortController = null;
     let originalLastEndFrame = 0;
@@ -628,7 +628,127 @@ function rebuildAssFromTranslation(originalAssContent, mapping, translationLooku
 // === END: مجموعه توابع جدید برای پردازش خروجی ASS ===
 
 
-        
+    
+// === START: تابع نهایی "پیوند" بر اساس فرمان شما (نسخه بی‌نقص) ===
+function mergeTrustedFramesWithAiText(originalMicroDVD, aiOutputMicroDVD) {
+    if (!originalMicroDVD) return { mergedText: '', untranslatedCount: 0, reconstructedCount: 0 };
+    const originalLines = originalMicroDVD.trim().split('\n');
+    if (!aiOutputMicroDVD) return { mergedText: originalMicroDVD, untranslatedCount: originalLines.length, reconstructedCount: 0 };
+
+    const aiLines = aiOutputMicroDVD.trim().split('\n');
+    const microDVDLineRegex = /^{(\d+)}{(\d+)}(.*)$/;
+
+    // ۱. تجزیه و پارس خطوط فایل اصلی
+    const parsedOrig = originalLines.map((line, index) => {
+        const match = line.match(microDVDLineRegex);
+        if (match) {
+            return {
+                index,
+                line,
+                startFrame: match[1],
+                endFrame: match[2],
+                timeKey: `{${match[1]}}{${match[2]}}`,
+                text: match[3]
+            };
+        }
+        return null;
+    });
+
+    // ۲. تجزیه و پارس خطوط دریافتی از هوش مصنوعی
+    const parsedAi = aiLines.map((line, index) => {
+        const match = line.trim().match(microDVDLineRegex);
+        if (match) {
+            return {
+                index,
+                line,
+                startFrame: match[1],
+                endFrame: match[2],
+                timeKey: `{${match[1]}}{${match[2]}}`,
+                text: match[3]
+            };
+        }
+        return null;
+    });
+
+    // نقشه‌ها برای نگهداری ایندکس خطوط جفت‌شده
+    const matchedOrigToAi = new Map(); // origIndex -> aiIndex
+    const matchedAiToOrig = new Map(); // aiIndex -> origIndex
+
+    // ۳. گام اول: تطابق ۱۰۰٪ دقیق بر اساس کلید فریم‌های اصلی
+    for (let i = 0; i < parsedOrig.length; i++) {
+        const orig = parsedOrig[i];
+        if (!orig) continue;
+
+        const aiIndex = parsedAi.findIndex((ai, j) => ai && !matchedAiToOrig.has(j) && ai.timeKey === orig.timeKey);
+        if (aiIndex !== -1) {
+            matchedOrigToAi.set(i, aiIndex);
+            matchedAiToOrig.set(aiIndex, i);
+        }
+    }
+
+    // ۴. گام دوم: الگوریتم نجات و بازسازی خطوط منفرد جا افتاده
+    let reconstructedCount = 0;
+
+    for (let i = 0; i < parsedOrig.length; i++) {
+        // فقط اگر خط فعلی فاقد ترجمه باشد
+        if (parsedOrig[i] && !matchedOrigToAi.has(i)) {
+            
+            // بررسی شرط وجود همسایه ترجمه‌شده در قبل و بعد (مرز ساندویچی)
+            const hasPrevNeighbor = i > 0 && parsedOrig[i - 1] && matchedOrigToAi.has(i - 1);
+            const hasNextNeighbor = i < parsedOrig.length - 1 && parsedOrig[i + 1] && matchedOrigToAi.has(i + 1);
+
+            if (hasPrevNeighbor && hasNextNeighbor) {
+                const prevAiIndex = matchedOrigToAi.get(i - 1);
+                const nextAiIndex = matchedOrigToAi.get(i + 1);
+
+                // پیدا کردن خطوط آزاد (ترجمه‌شده ولی جفت‌نشده) بین این دو مرز در خروجی هوش مصنوعی
+                const candidateAiIndices = [];
+                for (let j = prevAiIndex + 1; j < nextAiIndex; j++) {
+                    if (parsedAi[j] && !matchedAiToOrig.has(j)) {
+                        candidateAiIndices.push(j);
+                    }
+                }
+
+                // اگر دقیقاً یک خط یتیم پیدا شد، آن را به خط اصلی متناظر پیوند می‌دهیم
+                if (candidateAiIndices.length === 1) {
+                    const matchedAiIndex = candidateAiIndices[0];
+                    matchedOrigToAi.set(i, matchedAiIndex);
+                    matchedAiToOrig.set(matchedAiIndex, i);
+                    reconstructedCount++;
+                }
+            }
+        }
+    }
+
+    // ۵. بازسازی خروجی نهایی
+    const mergedLines = [];
+    let untranslatedCount = 0;
+
+    for (let i = 0; i < parsedOrig.length; i++) {
+        const orig = parsedOrig[i];
+        if (orig) {
+            if (matchedOrigToAi.has(i)) {
+                const aiIndex = matchedOrigToAi.get(i);
+                const translatedText = parsedAi[aiIndex].text;
+                mergedLines.push(`${orig.timeKey}${translatedText}`);
+            } else {
+                mergedLines.push(orig.line);
+                untranslatedCount++;
+            }
+        } else {
+            mergedLines.push(originalLines[i]);
+        }
+    }
+
+    return {
+        mergedText: mergedLines.join('\n'),
+        untranslatedCount: untranslatedCount,
+        reconstructedCount: reconstructedCount
+    };
+}
+// === END: تابع نهایی "پیوند" ===
+
+    
 
     
     // --- 4. توابع مدیریت برنامه ---
@@ -747,217 +867,206 @@ async function finalizeAssFile(assContent) {
         progressText.textContent = `${Math.round(p)}٪`;
     }
 
-      function renderModels() {
-        modelListDiv.innerHTML = '';
-        models.forEach((model, index) => {
-            const isCustom = !SYSTEM_MODELS.some(sm => sm.apiName === model.apiName);
-            const modelDiv = document.createElement('div');
-            modelDiv.className = 'model-item';
-            if (model.apiName === selectedModelApiName) modelDiv.classList.add('selected');
+    function renderModels() {
+    modelListDiv.innerHTML = '';
+    models.forEach((model, index) => {
+        const isCustom = !SYSTEM_MODELS.some(sm => sm.apiName === model.apiName);
+        const modelDiv = document.createElement('div');
+        modelDiv.className = 'model-item';
+        if (model.apiName === selectedModelApiName) modelDiv.classList.add('selected');
 
-            // دکمه سطل آشغال فقط برای مدل‌های دست‌ساز کاربر ظاهر می‌شود
-            const deleteBtnHtml = isCustom 
-                ? `<button class="delete-model-btn" title="حذف مدل سفارشی" data-index="${index}"><svg class="trash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11V17H11V11H9ZM13 11V17H15V11H13ZM9 4V6H15V4H9Z"></path></svg></button>` 
-                : '';
+        const deleteBtnHtml = isCustom 
+            ? `<button class="delete-model-btn" title="حذف مدل سفارشی" data-index="${index}"><svg class="trash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11V17H11V11H9ZM13 11V17H15V11H13ZM9 4V6H15V4H9Z"></path></svg></button>` 
+            : '';
 
-            modelDiv.innerHTML = `<div class="model-info"><span class="model-display-name">${model.displayName}</span><span class="model-api-name">${model.apiName}</span></div>${deleteBtnHtml}`;
-            
-            modelDiv.addEventListener('click', (e) => { 
-                if (!e.target.closest('.delete-model-btn')) selectModel(model.apiName); 
-            });
-
-            if (isCustom) {
-                modelDiv.querySelector('.delete-model-btn').addEventListener('click', (e) => { 
-                    e.stopPropagation(); 
-                    deleteModel(index); 
-                });
-            }
-            modelListDiv.appendChild(modelDiv);
+        modelDiv.innerHTML = `<div class="model-info"><span class="model-display-name">${model.displayName}</span><span class="model-api-name">${model.apiName}</span></div>${deleteBtnHtml}`;
+        
+        modelDiv.addEventListener('click', (e) => { 
+            if (!e.target.closest('.delete-model-btn')) selectModel(model.apiName); 
         });
-    }
 
-     function saveModels() { 
-      
-        const customModels = models.filter(m => !SYSTEM_MODELS.some(sm => sm.apiName === m.apiName));
-        localStorage.setItem('customModels', JSON.stringify(customModels)); 
-        localStorage.setItem('selectedModel', selectedModelApiName); 
-    }
-
-    function selectModel(apiName) { 
-        selectedModelApiName = apiName; 
-
-     
-        if (apiName && apiName.toLowerCase().includes('gemini-3.6-flash')) {
-            tempSlider.value = 0.4;
-            tempValue.textContent = '0.4';
-            topPSlider.value = 0.7;
-            topPValue.textContent = '0.7';
-        } else {
-            tempSlider.value = 0.7;
-            tempValue.textContent = '0.7';
-            topPSlider.value = 0.9;
-            topPValue.textContent = '0.9';
+        if (isCustom) {
+            modelDiv.querySelector('.delete-model-btn').addEventListener('click', (e) => { 
+                e.stopPropagation(); 
+                deleteModel(index); 
+            });
         }
+        modelListDiv.appendChild(modelDiv);
+    });
+}
 
-        saveModels(); 
-        renderModels(); 
+function saveModels() { 
+    const customModels = models.filter(m => !SYSTEM_MODELS.some(sm => sm.apiName === m.apiName));
+    localStorage.setItem('customModels', JSON.stringify(customModels)); 
+    localStorage.setItem('selectedModel', selectedModelApiName); 
+}
+
+function selectModel(apiName) { 
+    selectedModelApiName = apiName; 
+
+    if (apiName && apiName.toLowerCase().includes('gemini-3.6-flash')) {
+        tempSlider.value = 0.4;
+        tempValue.textContent = '0.4';
+        topPSlider.value = 0.7;
+        topPValue.textContent = '0.7';
+    } else {
+        tempSlider.value = 0.7;
+        tempValue.textContent = '0.7';
+        topPSlider.value = 0.9;
+        topPValue.textContent = '0.9';
     }
 
-    function loadModels() { 
-        let customModels = [];
+    saveModels(); 
+    renderModels(); 
+}
 
-       
-        const savedCustom = localStorage.getItem('customModels');
-        if (savedCustom) {
-            try { customModels = JSON.parse(savedCustom) || []; } catch (e) { customModels = []; }
-        } else {
-           
-            const legacyModels = localStorage.getItem('userModels');
-            if (legacyModels) {
-                try {
-                    const parsedLegacy = JSON.parse(legacyModels) || [];
-                  
-                    customModels = parsedLegacy.filter(lm => !SYSTEM_MODELS.some(sm => sm.apiName === lm.apiName));
-                    localStorage.setItem('customModels', JSON.stringify(customModels));
-                } catch (e) { }
-                localStorage.removeItem('userModels'); // پاک‌سازی کلید قدیمی برای همیشه
-            }
+function loadModels() { 
+    let customModels = [];
+
+    const savedCustom = localStorage.getItem('customModels');
+    if (savedCustom) {
+        try { customModels = JSON.parse(savedCustom) || []; } catch (e) { customModels = []; }
+    } else {
+        const legacyModels = localStorage.getItem('userModels');
+        if (legacyModels) {
+            try {
+                const parsedLegacy = JSON.parse(legacyModels) || [];
+                customModels = parsedLegacy.filter(lm => !SYSTEM_MODELS.some(sm => sm.apiName === lm.apiName));
+                localStorage.setItem('customModels', JSON.stringify(customModels));
+            } catch (e) { }
+            localStorage.removeItem('userModels');
         }
-
-       
-        const uniqueCustomModels = customModels.filter(cm => !SYSTEM_MODELS.some(sm => sm.apiName === cm.apiName));
-        models = [...SYSTEM_MODELS, ...uniqueCustomModels];
-
-      
-        const savedSelected = localStorage.getItem('selectedModel');
-        const initialSelected = savedSelected && models.some(m => m.apiName === savedSelected) 
-            ? savedSelected 
-            : models[0]?.apiName || ''; 
-
-        selectModel(initialSelected); 
     }
+
+    const uniqueCustomModels = customModels.filter(cm => !SYSTEM_MODELS.some(sm => sm.apiName === cm.apiName));
+    models = [...SYSTEM_MODELS, ...uniqueCustomModels];
+
+    const savedSelected = localStorage.getItem('selectedModel');
+    const initialSelected = savedSelected && models.some(m => m.apiName === savedSelected) 
+        ? savedSelected 
+        : models[0]?.apiName || ''; 
+
+    selectModel(initialSelected); 
+}
     function addModel() { const displayName = prompt("یک نام نمایشی برای مدل وارد کنید (مثلا: Gemini Flash):"); if (!displayName) return; const apiName = prompt("نام دقیق API مدل را وارد کنید (مثلا: gemini-1.5-flash-latest):"); if (!apiName) return; if (models.some(m => m.apiName === apiName)) return alert("این مدل از قبل وجود دارد."); models.push({ displayName, apiName }); selectModel(apiName); }
     function deleteModel(index) { if (!confirm(`آیا از حذف مدل "${models[index].displayName}" مطمئن هستید؟`)) return; const deletedModelWasSelected = models[index].apiName === selectedModelApiName; models.splice(index, 1); if (deletedModelWasSelected && models.length > 0) { selectModel(models[0].apiName); } else { saveModels(); renderModels(); } }
 
     function renderPrompts() {
-        promptListDiv.innerHTML = '';
-        
-        // ۱. رندر پرامپت‌های رسمی و سیستمی برنامه
-        SYSTEM_PROMPTS.forEach(sp => {
-            const systemPromptDiv = document.createElement('div');
-            systemPromptDiv.className = 'prompt-item';
-            if (sp.id === selectedPromptId) systemPromptDiv.classList.add('selected');
-            systemPromptDiv.innerHTML = `<div class="prompt-info"><span class="prompt-display-name">${sp.name}</span><span class="prompt-type-name">(رسمی - غیرقابل ویرایش)</span></div>`;
-            systemPromptDiv.addEventListener('click', () => selectPrompt(sp.id));
-            promptListDiv.appendChild(systemPromptDiv);
-        });
+    promptListDiv.innerHTML = '';
+    
+    SYSTEM_PROMPTS.forEach(sp => {
+        const systemPromptDiv = document.createElement('div');
+        systemPromptDiv.className = 'prompt-item';
+        if (sp.id === selectedPromptId) systemPromptDiv.classList.add('selected');
+        systemPromptDiv.innerHTML = `<div class="prompt-info"><span class="prompt-display-name">${sp.name}</span><span class="prompt-type-name">(رسمی - غیرقابل ویرایش)</span></div>`;
+        systemPromptDiv.addEventListener('click', () => selectPrompt(sp.id));
+        promptListDiv.appendChild(systemPromptDiv);
+    });
 
-        // ۲. رندر پرامپت‌های سفارشی کاربر
-        prompts.forEach((prompt) => {
-            const promptDiv = document.createElement('div');
-            promptDiv.className = 'prompt-item';
-            if (prompt.id === selectedPromptId) promptDiv.classList.add('selected');
-            promptDiv.innerHTML = `<div class="prompt-info"><span class="prompt-display-name">${prompt.name}</span><span class="prompt-type-name">سفارشی</span></div><button class="delete-model-btn" title="حذف پرامپت" data-id="${prompt.id}"><svg class="trash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11V17H11V11H9ZM13 11V17H15V11H13ZM9 4V6H15V4H9Z"></path></svg></button>`;
-            promptDiv.addEventListener('click', (e) => { if (!e.target.closest('.delete-model-btn')) selectPrompt(prompt.id); });
-            promptDiv.querySelector('.delete-model-btn').addEventListener('click', (e) => { e.stopPropagation(); deletePrompt(prompt.id); });
-            promptListDiv.appendChild(promptDiv);
-        });
-        updatePromptDisplay();
+    prompts.forEach((prompt) => {
+        const promptDiv = document.createElement('div');
+        promptDiv.className = 'prompt-item';
+        if (prompt.id === selectedPromptId) promptDiv.classList.add('selected');
+        promptDiv.innerHTML = `<div class="prompt-info"><span class="prompt-display-name">${prompt.name}</span><span class="prompt-type-name">سفارشی</span></div><button class="delete-model-btn" title="حذف پرامپت" data-id="${prompt.id}"><svg class="trash-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17 6H22V8H20V21C20 21.5523 19.5523 22 19 22H5C4.44772 22 4 21.5523 4 21V8H2V6H7V3C7 2.44772 7.44772 2 8 2H16C16.5523 2 17 2.44772 17 3V6ZM18 8H6V20H18V8ZM9 11V17H11V11H9ZM13 11V17H15V11H13ZM9 4V6H15V4H9Z"></path></svg></button>`;
+        promptDiv.addEventListener('click', (e) => { if (!e.target.closest('.delete-model-btn')) selectPrompt(prompt.id); });
+        promptDiv.querySelector('.delete-model-btn').addEventListener('click', (e) => { e.stopPropagation(); deletePrompt(prompt.id); });
+        promptListDiv.appendChild(promptDiv);
+    });
+    updatePromptDisplay();
+}
+
+function isSystemPrompt(id) {
+    return SYSTEM_PROMPTS.some(sp => sp.id === id);
+}
+
+function updatePromptDisplay() { 
+    const isSystem = isSystemPrompt(selectedPromptId); 
+    promptDisplayArea.value = getActivePromptContent(); 
+    promptDisplayArea.readOnly = isSystem; 
+}
+
+function getActivePromptContent() { 
+    const systemMatch = SYSTEM_PROMPTS.find(sp => sp.id === selectedPromptId);
+    if (systemMatch) return systemMatch.content;
+
+    const customMatch = prompts.find(p => p.id === selectedPromptId); 
+    return customMatch ? customMatch.content : SYSTEM_PROMPTS[0].content; 
+}
+
+function savePrompts() { 
+    localStorage.setItem('userPrompts', JSON.stringify(prompts)); 
+    localStorage.setItem('selectedPrompt', selectedPromptId); 
+}
+
+function loadPrompts() { 
+    const savedPrompts = localStorage.getItem('userPrompts'); 
+    const savedSelected = localStorage.getItem('selectedPrompt'); 
+    prompts = savedPrompts ? JSON.parse(savedPrompts) : []; 
+
+    if (!savedSelected || savedSelected === 'default') {
+        selectedPromptId = 'system_pro_flash';
+    } else {
+        selectedPromptId = savedSelected;
     }
+    renderPrompts(); 
+}
 
-    function isSystemPrompt(id) {
-        return SYSTEM_PROMPTS.some(sp => sp.id === id);
-    }
+function selectPrompt(id) { 
+    selectedPromptId = id; 
+    savePrompts(); 
+    renderPrompts(); 
+}
 
-    function updatePromptDisplay() { 
-        const isSystem = isSystemPrompt(selectedPromptId); 
-        promptDisplayArea.value = getActivePromptContent(); 
-        promptDisplayArea.readOnly = isSystem; 
-    }
+function addPrompt() { 
+    const name = prompt("یک نام برای پرامپت سفارشی خود وارد کنید:"); 
+    if (!name || name.trim() === '') return; 
+    const newPrompt = { 
+        id: Date.now().toString(), 
+        name: name.trim(), 
+        content: `// پرامپت جدید برای "${name.trim()}"\n// محتوای خود را اینجا وارد کنید.` 
+    }; 
+    prompts.push(newPrompt); 
+    selectPrompt(newPrompt.id); 
+}
 
-    function getActivePromptContent() { 
-        const systemMatch = SYSTEM_PROMPTS.find(sp => sp.id === selectedPromptId);
-        if (systemMatch) return systemMatch.content;
-
-        const customMatch = prompts.find(p => p.id === selectedPromptId); 
-        return customMatch ? customMatch.content : SYSTEM_PROMPTS[0].content; 
-    }
-
-    function savePrompts() { 
-        localStorage.setItem('userPrompts', JSON.stringify(prompts)); 
-        localStorage.setItem('selectedPrompt', selectedPromptId); 
-    }
-
-    function loadPrompts() { 
-        const savedPrompts = localStorage.getItem('userPrompts'); 
-        const savedSelected = localStorage.getItem('selectedPrompt'); 
-        prompts = savedPrompts ? JSON.parse(savedPrompts) : []; 
-
-        // مهاجرت کلید 'default' قدیمی به شناسه رسمی جدید
-        if (!savedSelected || savedSelected === 'default') {
-            selectedPromptId = 'system_pro_flash';
-        } else {
-            selectedPromptId = savedSelected;
-        }
-        renderPrompts(); 
-    }
-
-    function selectPrompt(id) { 
-        selectedPromptId = id; 
+function deletePrompt(id) { 
+    const promptToDelete = prompts.find(p => p.id === id); 
+    if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; 
+    prompts = prompts.filter(p => p.id !== id); 
+    if (selectedPromptId === id) { 
+        selectPrompt('system_pro_flash'); 
+    } else { 
         savePrompts(); 
         renderPrompts(); 
-    }
+    } 
+}
 
-    function addPrompt() { 
-        const name = prompt("یک نام برای پرامپت سفارشی خود وارد کنید:"); 
-        if (!name || name.trim() === '') return; 
-        const newPrompt = { 
-            id: Date.now().toString(), 
-            name: name.trim(), 
-            content: `// پرامپت جدید برای "${name.trim()}"\n// محتوای خود را اینجا وارد کنید.` 
-        }; 
-        prompts.push(newPrompt); 
-        selectPrompt(newPrompt.id); 
-    }
-
-    function deletePrompt(id) { 
-        const promptToDelete = prompts.find(p => p.id === id); 
-        if (!promptToDelete || !confirm(`آیا از حذف پرامپت "${promptToDelete.name}" مطمئن هستید؟`)) return; 
-        prompts = prompts.filter(p => p.id !== id); 
-        if (selectedPromptId === id) { 
-            selectPrompt('system_pro_flash'); 
-        } else { 
-            savePrompts(); 
-            renderPrompts(); 
-        } 
-    }
-
-    function handlePromptEditing() { 
-        if (isSystemPrompt(selectedPromptId)) return; 
-        const currentPrompt = prompts.find(p => p.id === selectedPromptId); 
-        if (currentPrompt) { 
-            currentPrompt.content = promptDisplayArea.value; 
-            savePrompts(); 
-        } 
-    }
+function handlePromptEditing() { 
+    if (isSystemPrompt(selectedPromptId)) return; 
+    const currentPrompt = prompts.find(p => p.id === selectedPromptId); 
+    if (currentPrompt) { 
+        currentPrompt.content = promptDisplayArea.value; 
+        savePrompts(); 
+    } 
+}
     function resetAllSettings() { 
-        if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { 
-            localStorage.removeItem('geminiApiKey'); 
-            localStorage.removeItem('customModels'); 
-            localStorage.removeItem('userModels'); 
-            localStorage.removeItem('selectedModel'); 
-            localStorage.removeItem('userPrompts'); 
-            localStorage.removeItem('selectedPrompt'); 
-            localStorage.removeItem('thinkingModeEnabled_v2');
-            apiKeyInput.value = ''; 
-            loadModels(); 
-            loadPrompts(); 
-            loadThinkingModeSetting();
-            checkFormValidity(); 
-            alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.');  
-            location.reload();  
-        } 
-    }
+    if (confirm("هشدار! آیا مطمئن هستید که می‌خواهید تمام تنظیمات (کلید API، لیست مدل‌ها و پرامپت‌های سفارشی) را پاک کنید؟ این عمل غیرقابل بازگشت است.")) { 
+        localStorage.removeItem('geminiApiKey'); 
+        localStorage.removeItem('customModels'); 
+        localStorage.removeItem('userModels'); 
+        localStorage.removeItem('selectedModel'); 
+        localStorage.removeItem('userPrompts'); 
+        localStorage.removeItem('selectedPrompt'); 
+        localStorage.removeItem('thinkingModeEnabled_v2');
+        apiKeyInput.value = ''; 
+        loadModels(); 
+        loadPrompts(); 
+        loadThinkingModeSetting();
+        checkFormValidity(); 
+        alert('تمام تنظیمات با موفقیت به حالت اولیه بازگردانده شد.');  
+        location.reload();  
+    } 
+}
     
 
     //  توابع  برای مدیریت تنظیمات ایمنی
@@ -1187,18 +1296,56 @@ async function finalizeAssFile(assContent) {
         });
     }
 
-    
+    function uploadFileToGemini(processedText, originalFilename, apiKey, onProgress) {
+        return new Promise((resolve, reject) => {
+            progressTitle.textContent = "مرحله ۲ از ۴: آپلود فایل به سرور گوگل...";
+            const formData = new FormData();
+            const fileToUpload = new File([processedText], originalFilename, { type: 'text/plain' });
+            formData.append('file', fileToUpload);
+            // const url = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
+              const proxyEnabled = document.getElementById('proxy-toggle').checked;
+              const GEMINI_BASE_URL = proxyEnabled ? 'https://anime-translator-web.khalilkhko.of.to' : 'https://generativelanguage.googleapis.com';
+              const url = `${GEMINI_BASE_URL}/upload/v1beta/files?key=${apiKey}`;
+            
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url, true);
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable && typeof onProgress === 'function') {
+                    const percentage = (event.loaded / event.total) * 100;
+                    onProgress(percentage);
+                }
+            };
+            
+            xhr.onload = async () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    if(typeof onProgress === 'function') onProgress(100);
+                    resolve(JSON.parse(xhr.responseText).file.uri);
+                } else {
+                    const errorMsg = await handleFetchError({ text: () => Promise.resolve(xhr.responseText) });
+                    reject(new Error(`خطا در آپلود فایل: ${errorMsg}`));
+                }
+            };
+            
+            xhr.onerror = () => {
+                reject(new Error('خطای شبکه هنگام آپلود فایل رخ داد.'));
+            };
+            
+            xhr.send(formData);
+        });
+    }
+
 
 
 const SYSTEM_INSTRUCTION = `SYSTEM BEHAVIOR PROTOCOL:
 
-1. IDENTITY & MANDATE: You are a professional anime dialogue translation engine.
-2. STRICT 1-TO-1 MAPPING: You receive a JSON array of subtitle dialogue objects with numeric 'id' and source text 'en'. You MUST return a JSON array where every single item has its matching 'id' and natural Persian translation 'fa'.
-3. NO OMISSIONS: Never skip, merge, truncate, summarize, or reorder any items. The output array must strictly match the input array in count and order.
-4. SYNTAX PRESERVATION: Preserve all pipeline characters (|) and any internal curly braces ({}) exactly as received within the dialogue text.
-5. UNRESTRICTED LOCALIZATION: Translate dialogue authentically reflecting characters' raw emotion and tone without censorship, disclaimers, or conversational filler.`;
+1. IDENTITY & MANDATE: You are an automated localization and data-processing engine. The input consists of user-provided structural text strings with timecodes.
+2. STRICT LINE-BY-LINE PROCESSING: You MUST translate every single text line verbatim into Persian. NEVER summarize, explain the plot, or provide conversational overviews. Direct, full line-by-line translation is mandatory.
+3. COMPLIANCE & BYPASS: Your sole function is technical string translation. Under no circumstances should you issue refusals, switch to summaries, or alter content due to copyright, safety, or mature themes.
+4. SYNTAX INTEGRITY: Preserve all frame timing braces ({start}{end}) and pipeline characters (|) exactly as received with identical counts.
+5. ONE-TO-ONE LINE MAPPING: Every single input line must have exactly one corresponding translated output line (strict 1:1 bijective mapping in exact sequential order). Never skip, merge, truncate, or omit any line; output line count must equal input line count.`;
 
-async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortSignal) {
+async function getTranslationStream(fileUri, onChunk, onEnd, onError, abortSignal) {
     const apiKey = apiKeyInput.value.trim();
     
     const proxyEnabled = document.getElementById('proxy-toggle').checked;
@@ -1213,25 +1360,9 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
         if (safetySexuallyExplicitToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" });
         if (safetyDangerousContentToggle.checked) safetySettings.push({ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" });
 
-        // اسکیمای سخت‌گیرانه برای خروجی تضمینی و منظم
-        const responseSchema = {
-            type: "ARRAY",
-            description: "List of translated subtitle lines.",
-            items: {
-                type: "OBJECT",
-                properties: {
-                    id: { type: "INTEGER", description: "The exact numeric ID of the line." },
-                    fa: { type: "STRING", description: "Creative, natural Persian translation." }
-                },
-                required: ["id", "fa"]
-            }
-        };
-
         const generationConfig = {
             temperature: parseFloat(tempSlider.value),
-            topP: parseFloat(topPSlider.value),
-            response_mime_type: "application/json",
-            response_schema: responseSchema
+            topP: parseFloat(topPSlider.value)
         };
 
         if (thinkingModeToggle.checked) {
@@ -1240,6 +1371,7 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
             };
         }
 
+        
         const requestBody = {
             system_instruction: {
                 parts: [
@@ -1248,7 +1380,8 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
             },
             contents: [{
                 parts: [
-                    { text: `${activePrompt}\n\nINPUT DATA (JSON):\n${payloadJson}` }
+                    { fileData: { mime_type: "text/plain", file_uri: fileUri } },
+                    { text: activePrompt }
                 ]
             }],
             generationConfig: generationConfig
@@ -1258,6 +1391,8 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
             requestBody.safetySettings = safetySettings;
         }
 
+        console.log("درخواست ارسالی به API:", requestBody);
+        
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1270,6 +1405,8 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullText = '';
+        
+        
         let buffer = '';
 
         while (true) {
@@ -1280,8 +1417,10 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
                         const jsonStr = buffer.substring(5);
                         const parsed = JSON.parse(jsonStr);
                         const textPart = parsed.candidates[0]?.content?.parts[0]?.text;
-                        if (textPart) fullText += textPart;
-                    } catch (e) { }
+                        if (textPart) {
+                            fullText += textPart;
+                        }
+                    } catch (e) { console.warn("Could not parse final buffer chunk:", buffer); }
                 }
                 break;
             }
@@ -1300,15 +1439,17 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
                             fullText += textPart;
                             onChunk(fullText);
                         }
-                    } catch (e) { }
+                    } catch (e) { console.warn("Could not parse a JSON chunk:", jsonStr); }
                 }
             }
         }
+        
 
         onEnd(fullText);
 
     } catch(error) { 
         if (error.name === 'AbortError') {
+            console.log('Fetch aborted by user.');
             throw error;
         }
         onError(error); 
@@ -1376,7 +1517,7 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
 
 
 
-        translateBtn.addEventListener('click', async () => {
+       translateBtn.addEventListener('click', async () => {
     if (!uploadedFile || !apiKeyInput.value.trim()) return;
 
     progressSection.classList.remove('hidden');
@@ -1386,7 +1527,7 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
     stopTranslationBtn.classList.remove('hidden');
     stopTranslationBtn.disabled = false;
     translateBtn.disabled = true;
-    liveOutput.textContent = 'در حال آماده‌سازی...';
+    liveOutput.textContent = 'در حال آماده سازی...';
     translationStatusMessage.classList.remove('status-complete', 'status-incomplete', 'status-aborted');
     abortController = new AbortController();
     const signal = abortController.signal;
@@ -1399,12 +1540,14 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
         let outputFileNameBase = '';
 
         // --- فاز ۱: استخراج محتوا ---
+        // اگر فایل از ویدیو آمده باشد، الان زمان استخراج است
         if (uploadedFile.streamIndex !== undefined) {
             const videoFile = uploadedFile.file;
             outputFileNameBase = videoFile.name.substring(0, videoFile.name.lastIndexOf('.'));
             
+            // نمایش نوار پیشرفت "فاز استخراج"
             const onFfmpegProgress = (p) => {
-                updateProgress(p, 'مرحله ۱ از ۳: استخراج زیرنویس از فایل ویدیویی...');
+                updateProgress(p, 'مرحله ۱ از ۴: استخراج زیرنویس از فایل ویدیویی...');
             };
 
             const outputFormat = uploadedFile.type === 'subrip' ? 'srt' : 'ass';
@@ -1417,10 +1560,12 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
             
             rawSubtitleContent = await new Response(ffmpegResult.files[0].data).text();
 
+            // اگر ترک استخراجی ASS بود، محتوای آن را برای مسیر ASS آماده می‌کنیم
             if (uploadedFile.type === 'ass') {
                 originalAssContent = rawSubtitleContent;
             }
         } else {
+            // اگر فایل مستقیم آپلود شده بود، محتوای آن را بخوان
             rawSubtitleContent = await uploadedFile.text();
             outputFileNameBase = uploadedFile.name.substring(0, uploadedFile.name.lastIndexOf('.'));
         }
@@ -1432,24 +1577,26 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
         let microDVDContent = '';
         let assMapping = [];
         
-        updateProgress(0, 'مرحله ۱ از ۳: پردازش فایل ورودی...');
+        updateProgress(0, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
 
         if (useAssPath) {
+            // `originalAssContent` در هر دو حالت (مستقیم یا ویدیو) آماده است
             const processResult = processAssForTranslationAndMapping(originalAssContent);
             microDVDContent = processResult.microdvdForAI;
             assMapping = processResult.map;
-            updateProgress(100, 'مرحله ۱ از ۳: پردازش فایل ورودی...');
+            updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
         } else {
+            // مسیر SRT (یا ASS به SRT)
             let cleanSrtContent = '';
             const sourceIsAss = isAssInput || (uploadedFile.type === 'ass');
             
             if (sourceIsAss) {
-                updateProgress(50, 'مرحله ۱ از ۳: تبدیل ASS به SRT و حذف استایل‌ها...');
+                updateProgress(50, 'مرحله ۱ از ۴: تبدیل ASS به SRT و حذف استایل‌ها...');
                 cleanSrtContent = cleanAssToSrt(rawSubtitleContent);
             } else { 
                  cleanSrtContent = sortSrtContent(rawSubtitleContent);
             }
-            updateProgress(100, 'مرحله ۱ از ۳: پردازش فایل ورودی...');
+            updateProgress(100, 'مرحله ۱ از ۴: پردازش فایل ورودی...');
 
             if (!cleanSrtContent || cleanSrtContent.trim() === '') {
                  throw new Error("فایل زیرنویس پس از پردازش خالی است. ممکن است فرمت داخلی آن پشتیبانی نشود.");
@@ -1459,35 +1606,23 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
         
         if (!microDVDContent) throw new Error("فایل زیرنویس ورودی خالی است یا فرمت آن صحیح نیست.");
         
-        // تفکیک تایم‌کدها در حافظه موقت و آماده‌سازی دیتای سبک ID محور
+        originalMicroDVDLines = microDVDContent.split('\n').length;
         const microDVDLines = microDVDContent.split('\n');
-        originalMicroDVDLines = microDVDLines.length;
         const lastOriginalLine = microDVDLines[microDVDLines.length - 1] || '';
         const originalLineMatch = lastOriginalLine.match(/\{(\d+)\}\{(\d+)\}(.*)/);
         originalLastEndFrame = originalLineMatch ? parseInt(originalLineMatch[2], 10) : 0;
+        
+        liveOutput.textContent = 'فایل پردازش شد. در حال آماده‌سازی برای آپلود...';
 
-        const timecodeMap = new Map();
-        const payloadData = [];
-        const lineRegex = /^\{(\d+)\}\{(\d+)\}(.*)$/;
-
-        microDVDLines.forEach((line, index) => {
-            const match = line.trim().match(lineRegex);
-            const lineId = index + 1;
-            if (match) {
-                timecodeMap.set(lineId, `{${match[1]}}{${match[2]}}`);
-                payloadData.push({ id: lineId, en: match[3] });
-            } else {
-                timecodeMap.set(lineId, "");
-                payloadData.push({ id: lineId, en: line });
-            }
-        });
-
-        const payloadJsonString = JSON.stringify(payloadData);
+        const onUploadProgress = (p) => {
+             updateProgress(p, 'مرحله ۲ از ۴: آپلود فایل زیرنویس به سرور گوگل...');
+        };
+        const fileUri = await uploadFileToGemini(microDVDContent, 'data_payload.txt', apiKeyInput.value.trim(), onUploadProgress);
         
         const thinkingStartTime = Date.now();
         const baseThinkingText = 'مرحلهٔ تفکر هوش‌مصنوعی، اتمام فرایند ممکن است چند دقیقه‌ای طول بکشد، لطفاً صبور باشید: ';
         liveOutput.textContent = baseThinkingText + '0.0 s';
-        updateProgress(0, 'مرحله ۲ از ۳: هوش مصنوعی در حال تفکر است...');
+        updateProgress(0, 'مرحله ۳ از ۴: هوش مصنوعی در حال تفکر است...');
 
         thinkingPhaseTimer = setInterval(() => {
             const elapsedTime = ((Date.now() - thinkingStartTime) / 1000).toFixed(1);
@@ -1500,67 +1635,26 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
                 clearInterval(thinkingPhaseTimer);
                 thinkingPhaseTimer = null;
                 isFirstChunk = false;
-                updateProgress(0, "مرحله ۳ از ۳: در حال دریافت ترجمه...");
+                updateProgress(0, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
             }
-            
-            // نمایش زنده ترجمه‌ها در صفحه
-            const matches = currentFullText.match(/"fa"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g);
-            if (matches) {
-                const liveLines = matches.map(m => {
-                    const text = m.replace(/^"fa"\s*:\s*"/, '').replace(/"$/, '');
-                    return text.replace(/\\"/g, '"').replace(/\|/g, ' ');
-                });
-                liveOutput.textContent = liveLines.join('\n');
-                liveOutput.scrollTop = liveOutput.scrollHeight;
-                const percentage = Math.min(99, Math.round((liveLines.length / originalMicroDVDLines) * 100));
-                updateProgress(percentage, "مرحله ۳ از ۳: در حال دریافت ترجمه...");
-            }
+            const translatedLines = currentFullText.split('\n');
+            liveOutput.textContent = translatedLines.map(line => (line.match(/\{(\d+)\}\{(\d+)\}(.*)/) || [])[3] || '').join('\n').replace(/\|/g, ' ');
+            liveOutput.scrollTop = liveOutput.scrollHeight;
+            const percentage = Math.min(99, Math.round((translatedLines.length / originalMicroDVDLines) * 100));
+            updateProgress(percentage, "مرحله ۴ از ۴: در حال دریافت ترجمه...");
         };
-
         const onStreamEnd = (finalText) => {
             clearInterval(thinkingPhaseTimer);
             updateProgress(100, "ترجمه با موفقیت انجام شد!");
-
-            // ۱. تبدیل خروجی JSON هوش مصنوعی به فرمت MicroDVD
-            let translatedArray = [];
-            try {
-                let cleaned = finalText.trim();
-                const firstBracket = cleaned.indexOf('[');
-                const lastBracket = cleaned.lastIndexOf(']');
-                if (firstBracket >= 0 && lastBracket > firstBracket) {
-                    cleaned = cleaned.substring(firstBracket, lastBracket + 1);
-                }
-                translatedArray = JSON.parse(cleaned);
-            } catch (err) {
-                console.error("خطا در پارس JSON خروجی:", err);
-                throw new Error("پاسخ دریافتی از هوش مصنوعی ساختار معتبری نداشت.");
-            }
-
-            const reconstructedLines = [];
-            let translatedMap = new Map();
-            translatedArray.forEach(item => {
-                if (item && item.id !== undefined) {
-                    translatedMap.set(item.id, item.fa || '');
-                }
-            });
-
-            for (let i = 1; i <= originalMicroDVDLines; i++) {
-                const timePrefix = timecodeMap.get(i) || '';
-                const faText = translatedMap.has(i) ? translatedMap.get(i) : (payloadData[i - 1]?.en || '');
-                reconstructedLines.push(`${timePrefix}${faText}`);
-            }
-
-            const finalReconstructedMicroDVD = reconstructedLines.join('\n');
-
-            // ۲. اجرای پردازش نهایی، اعتبارسنجی و پیام‌ها دقیقاً و مو به مو مطابق فایل اصلی شما
+            
             if (useAssPath) {
-                const translationLookup = createTranslationLookupMap(finalReconstructedMicroDVD);
+                const translationLookup = createTranslationLookupMap(finalText);
                 const rebuildResult = rebuildAssFromTranslation(originalAssContent, assMapping, translationLookup);
                 translatedAssContent = rebuildResult.rebuiltAss;
                 const untranslatedCount = rebuildResult.untranslatedCount;
                 const styleFailures = rebuildResult.styleReplacementFailureCount; 
                 
-                const isComplete = checkTranslationCompleteness(finalReconstructedMicroDVD, originalLastEndFrame);
+                const isComplete = checkTranslationCompleteness(finalText, originalLastEndFrame);
 
                 let statusText = isComplete ? '✔️ ترجمه کامل است و استایل‌ها حفظ شده‌اند.' : '⚠️ ترجمه ممکن است ناقص باشد.';
                 if (untranslatedCount > 0) {
@@ -1574,20 +1668,16 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
                 translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
 
             } else {
-                translatedMicroDVDContent = finalReconstructedMicroDVD;
+                const mergeResult = mergeTrustedFramesWithAiText(microDVDContent, finalText);
+                translatedMicroDVDContent = mergeResult.mergedText;
                 const isComplete = checkTranslationCompleteness(translatedMicroDVDContent, originalLastEndFrame);
-
-               
-                let untranslatedCount = 0;
-                for (let i = 1; i <= originalMicroDVDLines; i++) {
-                    if (!translatedMap.has(i)) untranslatedCount++;
-                }
-
                 let statusText = isComplete ? '✔️ ترجمه کامل است.' : '⚠️ ترجمه ممکن است ناقص باشد.';
-                if (untranslatedCount > 0) {
-                   statusText += ` (توجه: ترجمه ${untranslatedCount} خط یافت نشد.)`;
+                if (mergeResult.untranslatedCount > 0) {
+                   statusText += ` (توجه: ترجمه ${mergeResult.untranslatedCount} خط یافت نشد.)`;
                 }
-                
+                if (mergeResult.reconstructedCount > 0) {
+                     statusText += ` (تعداد ${mergeResult.reconstructedCount} خط با تایم‌کد مخدوش بازسازی شد.)`;
+                }
                 translationStatusMessage.innerHTML = statusText;
                 translationStatusMessage.classList.add(isComplete ? 'status-complete' : 'status-incomplete');
             }
@@ -1597,11 +1687,9 @@ async function getTranslationStream(payloadJson, onChunk, onEnd, onError, abortS
             translateBtn.disabled = false;
             stopTranslationBtn.classList.add('hidden');
         };
-
         const onStreamError = (error) => { throw error; };
 
-        // ارسال درخواست مستقیم با دیتای JSON بدون نیاز به آپلود فایل
-        await getTranslationStream(payloadJsonString, onChunkReceived, onStreamEnd, onStreamError, signal);
+        await getTranslationStream(fileUri, onChunkReceived, onStreamEnd, onStreamError, signal);
 
     } catch (error) {
         clearInterval(thinkingPhaseTimer); 
