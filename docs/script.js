@@ -904,7 +904,7 @@ function saveModels() {
 function selectModel(apiName) { 
     selectedModelApiName = apiName; 
 
-    if (apiName && apiName.toLowerCase().includes('gemini-3.6-flash')) {
+    if (apiName && apiName.toLowerCase().includes('gemini-3-6-flash')) {
         tempSlider.value = 0.4;
         tempValue.textContent = '0.4';
         topPSlider.value = 0.7;
