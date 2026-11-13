@@ -133,6 +133,7 @@ let translatedMicroDVDContent = '';
 let originalMicroDVDLines = 0;
 
 const SYSTEM_MODELS = [
+    { displayName: 'Gemini 4 Hydrogen', apiName: 'gemini-4-hydrogen' },     
     { displayName: 'Gemini 3.8 Flash', apiName: 'gemini-3.8-flash' },        
     { displayName: 'Gemini 3.7 Flash', apiName: 'gemini-3.7-flash' },        
     { displayName: 'Gemini 3.6 Flash', apiName: 'gemini-3.6-flash' },        
